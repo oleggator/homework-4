@@ -1,4 +1,6 @@
-from pages.page import Page, Component
+from pages.auth_page_components import AuthForm
+from pages.page import Page
+from pages.profile_page import ProfilePage
 
 
 class AuthPage(Page):
@@ -7,27 +9,10 @@ class AuthPage(Page):
     def form(self):
         return AuthForm(self.driver)
 
+    def sign_in(self, login, password):
+        form = self.form
+        form.login = login
+        form.password = password
+        form.submit()
 
-class AuthForm(Component):
-    LOGIN = '//input[@name="st.email"]'
-    PASSWORD = '//input[@name="st.password"]'
-    SUBMIT = '//input[@type="submit"][@data-l="t,sign_in"]'
-
-    @property
-    def login(self):
-        return self.driver.find_element_by_xpath(self.LOGIN).value()
-
-    @login.setter
-    def login(self, val):
-        self.driver.find_element_by_xpath(self.LOGIN).send_keys(val)
-
-    @property
-    def password(self):
-        return self.driver.find_element_by_xpath(self.PASSWORD).value()
-
-    @password.setter
-    def password(self, val):
-        self.driver.find_element_by_xpath(self.PASSWORD).send_keys(val)
-
-    def submit(self):
-        self.driver.find_element_by_xpath(self.SUBMIT).click()
+        return ProfilePage(self.driver)
