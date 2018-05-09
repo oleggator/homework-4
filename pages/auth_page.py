@@ -14,5 +14,4 @@ class AuthPage(Page):
         form.login = login
         form.password = password
         form.submit()
-
         return ProfilePage(self.driver)
