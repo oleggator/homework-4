@@ -12,7 +12,7 @@ class Page:
         self.driver = driver
         self.path: str = kwargs.get('path', '')
 
-    def open(self):
+    def open(self) -> 'Page':
         url: str = self.url
         self.driver.get(url)
         self.driver.maximize_window()
