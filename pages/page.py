@@ -6,16 +6,17 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 
 class Page:
-    BASE_URL = 'https://ok.ru/'
+    BASE_URL: str = 'https://ok.ru/'
 
-    def __init__(self, driver, **kwargs):
+    def __init__(self, driver, **kwargs) -> None:
         self.driver = driver
-        self.path = kwargs.get('path', '')
+        self.path: str = kwargs.get('path', '')
 
     def open(self):
-        url = self.url
+        url: str = self.url
         self.driver.get(url)
         self.driver.maximize_window()
+        return self
 
     @property
     def url(self):
@@ -24,14 +25,14 @@ class Page:
 
 class Component:
 
-    def __init__(self, driver):
+    def __init__(self, driver) -> None:
         self.driver = driver
 
 
 def url_changer(f):
     @wraps(f)
     def wrapped(self, *f_args, **f_kwargs):
-        current_url = self.driver.current_url
+        current_url: str = self.driver.current_url
         f(self, *f_args, **f_kwargs)
         WebDriverWait(self.driver, 10).until_not(expected_conditions.url_to_be(current_url))
 
