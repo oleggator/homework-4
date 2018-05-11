@@ -1,11 +1,5 @@
 from enum import Enum
 
-from selenium.webdriver import ActionChains
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.support.wait import WebDriverWait
-
 from pages.page import Component
 
 
@@ -56,7 +50,7 @@ class AlbumCreateModalForm(Component):
         elem = self.sticky_album
         if elem.is_selected() and not val:
             elem.click()
-        elif not elem.is_selected and val:
+        elif not elem.is_selected() and val:
             elem.click()
 
     def submit(self):
@@ -67,8 +61,8 @@ class AlbumCreateModalForm(Component):
 
 
 class AlbumTypeChoiceModal(Component):
-    ALBUM = '//i[@class="add-stub_img add-stub_img__album"]/parent::*'
-    CONTEST = '//i[@class="add-stub_img add-stub_img__contest"]/parent::*'
+    ALBUM = '//i[@class="add-stub_img add-stub_img__album"]/parent::a/parent::div[@class="ugrid_i"]/child::a'
+    CONTEST = '////i[@class="add-stub_img add-stub_img__contest"]/parent::a/parent::div[@class="ugrid_i"]/child::a'
 
     @property
     def album(self):
@@ -79,6 +73,7 @@ class AlbumTypeChoiceModal(Component):
         return self.driver.find_element_by_xpath(self.CONTEST)
 
     def choose(self, album_type):
+
         if album_type == AlbumType.ALBUM:
             self.album.click()
         elif album_type == AlbumType.CONTEST:
