@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pages.page import Component
+from pages.page import Component, url_changer
 
 
 class AlbumType(Enum):
@@ -53,6 +53,7 @@ class AlbumCreateModalForm(Component):
         elif not elem.is_selected() and val:
             elem.click()
 
+    @url_changer
     def submit(self):
         self.driver.find_element_by_xpath(self.SUBMIT).click()
 

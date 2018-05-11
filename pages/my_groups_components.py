@@ -1,13 +1,13 @@
 from selenium.webdriver.support.select import Select
 
-from pages.page import Component
+from pages.page import Component, url_changer
 
 
 class GroupCreateButton(Component):
     BUTTON = '//div[@class="create-group"]'
 
     def click(self):
-        return self.driver.find_element_by_xpath(self.BUTTON).click()
+        self.driver.find_element_by_xpath(self.BUTTON).click()
 
 
 class GroupCreateDialog(Component):
@@ -22,7 +22,7 @@ class GroupCreateDialog(Component):
     def interest(self):
         return self.driver.find_element_by_xpath(self.INTEREST)
 
-    def create_page(self, page_description):
+    def choose_public_page(self, page_description):
         self.page.click()
         form = GroupPageCreateForm(self.driver, page_description)
         form.submit()
@@ -86,6 +86,7 @@ class GroupPageCreateForm(Component):
     def age_restriction(self, value):
         self.age_restriction.select_by_value(value)
 
+    @url_changer
     def submit(self):
         self.driver.find_element_by_xpath(self.SUBMIT).click()
 
