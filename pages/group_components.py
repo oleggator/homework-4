@@ -4,6 +4,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 from pages.page import Component, url_changer
 from pages.photo_page import PhotoPage
+from pages.settings_page import SettingsPage
 
 
 class ConfirmModal(Component):
@@ -19,6 +20,7 @@ class ConfirmModal(Component):
 
 class LeftActionBar(Component):
     DELETE = 'ic_delete'
+    SETTINGS: str = '//*[@id="hook_Block_LeftColumnTopCardAltGroup"]/ul/li[4]/a/span'
 
     @url_changer
     def delete(self):
@@ -29,6 +31,13 @@ class LeftActionBar(Component):
             document.getElementsByClassName('{}')[0].click()
         '''.format(self.DELETE))
         ConfirmModal(self.driver).confirm()
+
+    @property
+    def to_settings_page(self) -> SettingsPage:
+        path = self.driver.find_element_by_xpath(self.SETTINGS).get_attribute('href')
+        setting_page = SettingsPage(self.driver, path=path)
+        setting_page.open()
+        return setting_page
 
 
 class MainNavBar(Component):
