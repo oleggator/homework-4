@@ -20,7 +20,7 @@ class ConfirmModal(Component):
 
 class LeftActionBar(Component):
     DELETE = 'ic_delete'
-    SETTINGS: str = '//*[@id="hook_Block_LeftColumnTopCardAltGroup"]/ul/li[4]/a/span'
+    SETTINGS: str = '//*[@id="hook_Block_LeftColumnTopCardAltGroup"]/ul/li[4]/a'
 
     @url_changer
     def delete(self):
