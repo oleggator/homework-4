@@ -59,12 +59,12 @@ class AlbumPageCreationTest(unittest.TestCase):
 
     def test_album_for_admins_creation(self):
         album: AlbumPage = self.photo_page.create_album(AlbumType.ALBUM, self.ALBUM_FOR_ADMINS)
-        ##TODO: check access right
+        # TODO: check access right
         self.assertEqual(self.ALBUM_FOR_ADMINS['title'], album.title)
 
-    def test_album_for_admins_creation(self):
+    def test_sticky_album_creation(self):
         album: AlbumPage = self.photo_page.create_album(AlbumType.ALBUM, self.STICKY_ALBUM)
-        ##TODO: check sticky album
+        # TODO: check sticky album
         self.assertEqual(self.STICKY_ALBUM['title'], album.title)
 
     def tearDown(self):
