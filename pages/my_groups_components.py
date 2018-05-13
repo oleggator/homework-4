@@ -32,18 +32,11 @@ class GroupCreateDialog(Component):
 
 
 class AgeRestriction(Enum):
-    NO_RESTRICTION = 0,
-    ADULT = 18
+    NO_RESTRICTION = "0",
+    ADULT = "18"
 
 
-class GroupPageCreateForm(Component):
-    TITLE: str = '//input[@name="st.layer.name"]'
-    DESCRIPTION: str = '//textarea[@name="st.layer.description"]'
-    SUBCATEGORY: str = '//select[@name="st.layer.pageMixedCategory"]'
-    AGE_RESTRICTION: str = '//select[@name="st.layer.ageRestriction"]'
-    SUBMIT: str = '//input[@name="button_create"]'
-    CANCEL: str = '//a[@id="button_cancel"]'
-
+class GroupSubcategory(Enum):
     AUTO_MOTO: str = 'subcatVal12001'
     BLOG: str = 'subcatVal12001'
     CHILDREN: str = 'subcatVal12003'
@@ -55,12 +48,21 @@ class GroupPageCreateForm(Component):
     IT: str = 'subcatVal12009'
     HEALTH: str = 'subcatVal12010'
 
+
+class GroupPageCreateForm(Component):
+    TITLE: str = '//input[@name="st.layer.name"]'
+    DESCRIPTION: str = '//textarea[@name="st.layer.description"]'
+    SUBCATEGORY: str = '//select[@name="st.layer.pageMixedCategory"]'
+    AGE_RESTRICTION: str = '//select[@name="st.layer.ageRestriction"]'
+    SUBMIT: str = '//input[@name="button_create"]'
+    CANCEL: str = '//a[@id="button_cancel"]'
+
     def __init__(self, driver, page_description: dict) -> None:
         super().__init__(driver)
-        self.title = page_description['title']
-        self.description = page_description['description']
-        self.subcategory = page_description['subcategory']
-        self.isAdult = page_description['age_restriction']
+        self.title: str = page_description['title']
+        self.description: str = page_description['description']
+        self.subcategory: str = page_description['subcategory'].value
+        self.age_restriction: str = page_description['age_restriction'].value
 
     @property
     def title(self) -> WebElement:

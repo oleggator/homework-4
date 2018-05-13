@@ -8,7 +8,7 @@ class AuthForm(Component):
 
     @property
     def login(self) -> str:
-        return self.driver.find_element_by_xpath(self.LOGIN).value()
+        return self.driver.find_element_by_xpath(self.LOGIN).text
 
     @login.setter
     def login(self, val):
@@ -16,7 +16,7 @@ class AuthForm(Component):
 
     @property
     def password(self) -> str:
-        return self.driver.find_element_by_xpath(self.PASSWORD).value()
+        return self.driver.find_element_by_xpath(self.PASSWORD).text
 
     @password.setter
     def password(self, val):
