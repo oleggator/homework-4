@@ -1,4 +1,4 @@
-from pages.group_components import LeftActionBar, MainNavBar
+from pages.group_components import LeftActionBar, MainNavBar, ApplicationPortlet
 from pages.page import Page
 from pages.photo_page import PhotoPage
 from pages.settings_page import SettingsPage
@@ -11,6 +11,7 @@ class GroupPage(Page):
     NAME_TEXT = '//*[@id="hook_Block_MiddleColumnTopCardAltGroup"]/div[2]/div/div[1]/div/span/h1'
     DESCRIPTION_TEXT = '//*[@id="hook_Block_MiddleColumnTopCardAltGroup"]/div[2]/div/div[2]/div[1]/div[2]'
     CATEGORY_TEXT = '//*[@id="hook_Block_MiddleColumnTopCardAltGroup"]/div[2]/div/div[2]/div[1]/div[1]'
+    APPLICATION_PORTLET = '//*[@id="hook_Block_AltGroupAppsPortletRB"]/div'
 
     @property
     def left_action_bar(self) -> LeftActionBar:
@@ -48,6 +49,10 @@ class GroupPage(Page):
 
     def get_type(self):
         return self.driver.find_element_by_xpath(self.TYPE_TEXT).text
+
+    def is_app_added(self, name):
+        portlet = self.driver.find_element_by_xpath(self.APPLICATION_PORTLET)
+        return ApplicationPortlet(self.driver, portlet).find_app(name)
 
     def unjoin(self):
         # self.driver.execute_script(

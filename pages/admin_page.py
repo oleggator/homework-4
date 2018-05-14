@@ -23,7 +23,8 @@ class AdminPage(Page):
             .perform()
         self.driver.execute_script(
             "document.getElementsByClassName('gwt-shortcutMenu-content')[0].style.display = 'block';")
-        return PopupUserMenu(self.driver)
+        PopupUserMenu(self.driver).assign_as_moderator.add_grant()
+        return self
 
     def to_administration_list(self):
         # WebDriverWait(self.driver, 10).until(

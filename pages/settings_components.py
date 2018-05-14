@@ -93,6 +93,54 @@ class GeneralForm(Component):
         WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located((By.XPATH, self.TIP)))
 
 
+class ApplicationPopup(Component):
+    SHOW_APP_RADIO_BUTTON = '//*[@id="field_place_PORTLET"]'
+    INSTALL_BUTTON = '//*[@id="hook_FormButton_button_install"]'
+    APP_NAME = '//*[@id="field_name"]'
+    POPUP_WINDOW = '//*[@id="popLayer_mo"]'
+
+    def __init__(self, driver):
+        super(ApplicationPopup, self).__init__(driver)
+        el = self.driver.find_element_by_xpath(self.APP_NAME)
+        self.app_name = el.get_attribute('value')
+
+    def apply_install(self):
+        self.driver.find_element_by_xpath(self.SHOW_APP_RADIO_BUTTON).click()
+        self.driver.find_element_by_xpath(self.INSTALL_BUTTON).click()
+        WebDriverWait(self.driver, 10).until(EC.invisibility_of_element_located((By.XPATH, self.POPUP_WINDOW)))
+        return self
+
+
+class AddGroupLinksPopup(Component):
+    POPUP = '//*[@id="popLayer_mo"]'
+    SELECT = '//*[@id="hook_InviteChangeCard_4585283105"]/div/div[2]/div[2]/div[2]/div[2]'
+    ADD_BUTTON = '//*[@id="hook_FormButton_button_invite"]'
+
+    def add(self):
+        WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located((By.XPATH, self.POPUP)))
+        self.driver.execute_script(
+            "document.getElementsByClassName('ifSelect')[0].style.display = 'block';")
+        self.driver.find_element_by_xpath(self.SELECT).click()
+        self.driver.find_element_by_xpath(self.ADD_BUTTON).click()
+
+
+class ApplicationForm(Component):
+    APPLICATION = '//*[@id="availableApps"]/div[2]/div/div[1]/div[2]/div/div[3]/a'
+
+    def install_app(self):
+        self.driver.find_element_by_xpath(self.APPLICATION).click()
+        return ApplicationPopup(self.driver)
+
+
+class ManagmentForm(Component):
+    GENERATE_API_KEY_BUTTON = '//*[@id="group-settings-form"]/div[8]/div[2]/div/div[2]/div/a'
+    API_KEY_INPUT = '//*[@id="hook_Form_PopLayerAltGroupChangeTokenForm"]/form/input[3]'
+
+    def generate_api_key(self):
+        self.driver.find_element_by_xpath(self.GENERATE_API_KEY_BUTTON).click()
+        return self.driver.find_element_by_xpath(self.API_KEY_INPUT).value
+
+
 class PopupUserMenu(Component):
     ASSIGN_MODERATOR_POPUP_ITEM = '//*[@id="hook_Block_MainContainer"]/div[5]/table/tbody/tr/td/div/div/div[1]/div/ul[2]/li[2]'
     REMOVE_MODERATOR_POPUP_ITEM = '//*[@id="hook_Block_MainContainer"]/div[5]/table/tbody/tr/td/div/div/div[1]/div/ul[2]/li[4]'

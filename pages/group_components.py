@@ -47,3 +47,18 @@ class MainNavBar(Component):
     def photo_page(self) -> PhotoPage:
         path = self.driver.find_element_by_xpath(self.PHOTO).get_attribute('href')
         return PhotoPage(self.driver, path=path)
+
+
+class ApplicationPortlet(Component):
+    APP_NAME = '//*[@id="hook_Block_AltGroupAppsPortletRB"]/div/div/div[2]/div/div/div/div[2]/div/div[1]'
+
+    def __init__(self, driver, elem):
+        super(ApplicationPortlet, self).__init__(driver)
+        self.elem = elem
+
+    def find_app(self, name):
+        app = self.elem.find_element_by_xpath(self.APP_NAME)
+        print(app.text)
+        if app.text == name:
+            return True
+        return False

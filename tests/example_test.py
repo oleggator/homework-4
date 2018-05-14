@@ -16,8 +16,6 @@ class ExampleTest(unittest.TestCase):
     PASSWORD_2 = os.environ['PASSWORD_2']
 
     def setUp(self):
-        browser = os.environ.get('BROWSER', 'CHROME')
-
         self.driver_1 = Remote(
             command_executor='http://127.0.0.1:4444/wd/hub',
             desired_capabilities=DesiredCapabilities.CHROME
@@ -41,7 +39,16 @@ class ExampleTest(unittest.TestCase):
             'age_restriction': 0
         }
 
+        desc2 = {
+            'description': 'group about python',
+            'title': 'django',
+            'subcategory': GroupPageCreateForm.CHILDREN,
+            'age_restriction': 0
+        }
+
         group_page = profile_page.to_groups_page().create_public_page(desc)
+        profile_page.open()
+        profile_page.to_groups_page().create_public_page(desc2)
         group_page.open()
 
         auth_page_user2 = AuthPage(self.driver_2)
@@ -64,9 +71,7 @@ class ExampleTest(unittest.TestCase):
 
     def test_add_moderator(self):
         admin_page = self.setting_page.to_admin_page()
-        admin_page.add_moderator(self.profile_user_2.name). \
-            assign_as_moderator. \
-            add_grant()
+        admin_page.add_moderator(self.profile_user_2.name)
         admin_page.to_administration_list()
         self.assertTrue(admin_page.is_exists_moder_href(self.profile_user_2.name))
 
@@ -77,7 +82,7 @@ class ExampleTest(unittest.TestCase):
         self.assertEqual(self.group_page.get_name(), 'kill bill')
         self.assertEqual(self.group_page.get_description(), "this group about bill's death")
 
-    def test_chane_groups_category(self):
+    def test_change_groups_category(self):
         general_page = self.setting_page.to_general_page()
         general_page.change_category_of_group(GeneralForm.Categories.STAR.value)
         form = general_page.form
@@ -85,3 +90,17 @@ class ExampleTest(unittest.TestCase):
         category = form.category
         self.group_page.open()
         self.assertEqual("{}, {}".format(type, category), self.group_page.get_category())
+
+    def test_add_app(self):
+        app_page = self.setting_page.to_application_page()
+        app_page.open()
+        name = app_page.add_app()
+        self.group_page.open()
+        self.assertTrue(self.group_page.is_app_added(name))
+
+    def test_add_group_links(self):
+        self.setting_page.add_group_links().add()
+        # app_page.open()
+        # name = app_page.add_app()
+        # self.group_page.open()
+        # self.assertTrue(self.group_page.is_app_added(name))
