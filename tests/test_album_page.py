@@ -41,9 +41,10 @@ class AlbumPageCreationTest(unittest.TestCase):
     }
 
     def setUp(self):
+        self.browser: str = os.getenv('BROWSER', 'CHROME')
         self.driver = webdriver.Remote(
             command_executor='http://127.0.0.1:4444/wd/hub',
-            desired_capabilities=getattr(DesiredCapabilities, 'CHROME').copy()
+            desired_capabilities=getattr(DesiredCapabilities, self.browser).copy()
         )
         self.driver.implicitly_wait(10)
         login: str = os.environ.get('LOGIN')
@@ -94,29 +95,30 @@ class AlbumPageImageUploadTest(unittest.TestCase):
     SAMPLE_SMALL_IMAGE_PATH: str = 'assets/sample_small_image.jpg'
     SAMPLE_BULK_IMAGES: List[str] = ['assets/sample_image.jpg' for x in range(0, 10)]
 
-    def setUpClass(self):
-        self.driver = webdriver.Remote(
+    @classmethod
+    def setUpClass(cls):
+        cls.browser: str = os.getenv('BROWSER', 'CHROME')
+        cls.driver = webdriver.Remote(
             command_executor='http://127.0.0.1:4444/wd/hub',
-            desired_capabilities=getattr(DesiredCapabilities, 'CHROME').copy()
+            desired_capabilities=getattr(DesiredCapabilities, cls.browser).copy()
         )
-        self.driver.implicitly_wait(10)
+        cls.driver.implicitly_wait(10)
         login: str = os.environ.get('LOGIN')
         password: str = os.environ.get('PASSWORD')
 
-        self.group: GroupPage = AuthPage(self.driver).open() \
+        cls.group: GroupPage = AuthPage(cls.driver).open() \
             .sign_in(login, password) \
             .to_groups_page() \
-            .create_public_page(self.TEST_GROUP)
-        self.photo_page: PhotoPage = self.group.to_photo_page()
+            .create_public_page(cls.TEST_GROUP)
+        cls.photo_page: PhotoPage = cls.group.to_photo_page()
 
     def setUp(self):
-        self.album: AlbumPage = self.group.to_photo_page() \
-            .create_album(AlbumType.ALBUM)
+        self.album: AlbumPage = self.photo_page.open() \
+            .create_album(AlbumType.ALBUM, self.ALBUM)
 
-    @classmethod
-    def tearDown(cls):
-        cls.album.open()
-        cls.album.delete_album()
+    def tearDown(self):
+        self.album.open()
+        self.album.delete_album()
 
     @classmethod
     def tearDownClass(cls):
@@ -139,6 +141,8 @@ class AlbumPageImageUploadTest(unittest.TestCase):
         uploaded: ImageCard = self.album.photos_panel.get_last()
         self.assertEqual(image.id, uploaded.id)
 
+    @unittest.skipIf(os.getenv('BROWSER', 'CHROME') == 'FIREFOX',
+                     "simple multiply images upload way was not working in firefox")
     def test_bulk_image_upload(self):
         images: List[ImageCard] = self.album.upload_photos(self.SAMPLE_BULK_IMAGES)
         uploaded: List[ImageCard] = self.album.photos_panel.images
