@@ -4,6 +4,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 from pages.page import Component, url_changer
 from pages.photo_page import PhotoPage
+from pages.settings_page import SettingsPage
 
 
 class ConfirmModal(Component):
@@ -19,6 +20,7 @@ class ConfirmModal(Component):
 
 class LeftActionBar(Component):
     DELETE = 'ic_delete'
+    SETTINGS: str = '//*[@id="hook_Block_LeftColumnTopCardAltGroup"]/ul/li[4]/a'
 
     @url_changer
     def delete(self):
@@ -30,6 +32,13 @@ class LeftActionBar(Component):
         '''.format(self.DELETE))
         ConfirmModal(self.driver).confirm()
 
+    @property
+    def to_settings_page(self) -> SettingsPage:
+        path = self.driver.find_element_by_xpath(self.SETTINGS).get_attribute('href')
+        setting_page = SettingsPage(self.driver, path=path)
+        setting_page.open()
+        return setting_page
+
 
 class MainNavBar(Component):
     PHOTO = '//a[@data-l="aid,NavMenu_AltGroup_Albums"]'
@@ -38,3 +47,18 @@ class MainNavBar(Component):
     def photo_page(self) -> PhotoPage:
         path = self.driver.find_element_by_xpath(self.PHOTO).get_attribute('href')
         return PhotoPage(self.driver, path=path)
+
+
+class ApplicationPortlet(Component):
+    APP_NAME = '//*[@id="hook_Block_AltGroupAppsPortletRB"]/div/div/div[2]/div/div/div/div[2]/div/div[1]'
+
+    def __init__(self, driver, elem):
+        super(ApplicationPortlet, self).__init__(driver)
+        self.elem = elem
+
+    def find_app(self, name):
+        app = self.elem.find_element_by_xpath(self.APP_NAME)
+        print(app.text)
+        if app.text == name:
+            return True
+        return False
