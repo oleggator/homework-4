@@ -1,4 +1,6 @@
-from pages.album_components import AlbumControlPanel, AlbumUploadPhotoButton, ImageCard
+from typing import List
+
+from pages.album_components import AlbumControlPanel, ImageCard, PhotosPanel
 from pages.page import Page
 
 
@@ -13,11 +15,14 @@ class AlbumPage(Page):
         return AlbumControlPanel(self.driver)
 
     @property
-    def upload_photo_button(self) -> AlbumUploadPhotoButton:
-        return AlbumUploadPhotoButton(self.driver)
+    def photos_panel(self) -> PhotosPanel:
+        return PhotosPanel(self.driver)
 
     def delete_album(self) -> None:
         self.control_panel.delete_album()
 
-    def upload_photo(self, path) -> ImageCard:
-        return self.upload_photo_button.upload(path)
+    def upload_photo(self, path: str) -> ImageCard:
+        return self.photos_panel.upload(path)
+
+    def upload_photos(self, images: List[str]) -> List[ImageCard]:
+        return self.photos_panel.bulk_upload(images)

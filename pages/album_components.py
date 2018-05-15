@@ -1,3 +1,4 @@
+import os
 from typing import List
 from urllib import parse
 
@@ -87,23 +88,38 @@ class ImageCard(Component):
 class PhotosPanel(Component):
     LOADER: str = '//div[@class="photo-card_loading"]'
     PHOTOS: str = 'span.photo-card_cnt img'
+    UPLOAD: str = '//input[@name="photo"]'
+
+    def __init__(self, driver):
+        super().__init__(driver)
+
+    @property
+    def images(self) -> List[WebElement]:
+        return self.driver.find_elements_by_css_selector(self.PHOTOS)
+
+    @property
+    def upload_input(self) -> WebElement:
+        return self.driver.find_element_by_xpath(self.UPLOAD)
 
     def get_last(self):
-        imgs: List[WebElement] = self.driver.find_elements_by_css_selector(self.PHOTOS)
-        src: str = imgs[0].get_attribute('src')
+        src: str = self.images[0].get_attribute('src')
         return ImageCard(self.driver, src)
 
+    def upload(self, path: str) -> ImageCard:
+        path = os.path.abspath(path)
+        self.driver.find_element_by_xpath(self.UPLOAD).send_keys(path)
+        self.wait_uploading()
+        return self.get_last()
+
+    # TODO: rewrite due to performance issues
     def wait_uploading(self) -> None:
         WebDriverWait(self.driver, 60).until_not(
             expected_conditions.presence_of_element_located((By.XPATH, self.LOADER))
         )
 
-
-class AlbumUploadPhotoButton(Component):
-    UPLOAD: str = '//input[@name="photo"]'
-
-    def upload(self, path) -> ImageCard:
-        self.driver.find_element_by_xpath(self.UPLOAD).send_keys(path)
-        photos_panel: PhotosPanel = PhotosPanel(self.driver)
-        photos_panel.wait_uploading()
-        return photos_panel.get_last()
+    def bulk_upload(self, images: List[str]) -> List[ImageCard]:
+        upload_input: WebElement = self.upload_input
+        paths: str = '\n'.join([os.path.abspath(path) for path in images])
+        upload_input.send_keys(paths)
+        self.wait_uploading()
+        return [ImageCard(self.driver, img.get_attribute('src')) for img in self.images]
