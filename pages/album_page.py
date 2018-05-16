@@ -26,3 +26,5 @@ class AlbumPage(Page):
 
     def upload_photos(self, images: List[str]) -> List[ImageCard]:
         return self.photos_panel.bulk_upload(images)
+
+
