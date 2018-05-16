@@ -1,7 +1,9 @@
 import os
+from enum import Enum
 from typing import List
 from urllib import parse
 
+from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions
@@ -19,6 +21,41 @@ class AlbumDeleteConfirmModal(Component):
 
     def cancel(self) -> None:
         self.driver.find_element_by_xpath(self.CANCEL).click()
+
+
+class Reaction(Enum):
+    WOW = '__react-wow'
+    HEART = '__react-heart'
+    LOL = '__react-lol'
+    SORROW = '__react-sorrow'
+    LIKE = '__react-like'
+
+
+class Like(Component):
+    LIKE_TOGGLE: ''
+    LIKE_BUTTON_TEMPLATE: '.hook_Block_ShortcutMenuReact {}'
+
+    def __init__(self, driver, reaction: Reaction = Reaction.LIKE):
+        super().__init__(driver)
+        self.reaction = reaction
+        self.LIKE_BUTTON = self.LIKE_BUTTON_TEMPLATE.format(reaction.value)
+
+    def set_like(self):
+        ActionChains(self.driver) \
+            .move_to_element(self.like_enable_button) \
+            .click(self.like_button) \
+            .perform()
+
+    def unset_like(self):
+        self.like_enable_button.click()
+
+    @property
+    def like_enable_button(self):
+        return self.driver.find_element_by_css_selector(self.LIKE_TOGGLE)
+
+    @property
+    def like_button(self):
+        return self.driver.find_element_by_css_selector(self.LIKE_BUTTON)
 
 
 class AlbumControlPanel(Component):
@@ -42,6 +79,15 @@ class AlbumControlPanel(Component):
     @property
     def title(self) -> str:
         return self.driver.find_element_by_css_selector(self.TITLE).text
+
+    def set_like(self, reaction: Reaction):
+        like: Like = Like(self.driver, reaction)
+        like.set_like()
+        return like
+
+    @property
+    def like(self):
+        return Like(self.driver)
 
 
 class ImageCard(Component):
