@@ -37,16 +37,16 @@ class AgeRestriction(Enum):
 
 
 class GroupSubcategory(Enum):
-    AUTO_MOTO: str = 'subcatVal12001'
-    BLOG: str = 'subcatVal12001'
-    CHILDREN: str = 'subcatVal12003'
-    DESIGN: str = 'subcatVal12004'
-    ANIMALS: str = 'subcatVal12005'
-    GAMES: str = 'subcatVal12006'
-    CINEMA_TV: str = 'subcatVal12007'
-    BOOKS: str = 'subcatVal12008'
-    IT: str = 'subcatVal12009'
-    HEALTH: str = 'subcatVal12010'
+    AUTO_MOTO = 'subcatVal12001'
+    BLOG = 'subcatVal12001'
+    CHILDREN = 'subcatVal12003'
+    DESIGN = 'subcatVal12004'
+    ANIMALS = 'subcatVal12005'
+    GAMES = 'subcatVal12006'
+    CINEMA_TV = 'subcatVal12007'
+    BOOKS = 'subcatVal12008'
+    IT = 'subcatVal12009'
+    HEALTH = 'subcatVal12010'
 
 
 class GroupPageCreateForm(Component):
