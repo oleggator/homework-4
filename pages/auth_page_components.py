@@ -7,16 +7,16 @@ class AuthForm(Component):
     SUBMIT = '//input[@type="submit"][@data-l="t,sign_in"]'
 
     @property
-    def login(self):
-        return self.driver.find_element_by_xpath(self.LOGIN).value()
+    def login(self) -> str:
+        return self.driver.find_element_by_xpath(self.LOGIN).text
 
     @login.setter
     def login(self, val):
         self.driver.find_element_by_xpath(self.LOGIN).send_keys(val)
 
     @property
-    def password(self):
-        return self.driver.find_element_by_xpath(self.PASSWORD).value()
+    def password(self) -> str:
+        return self.driver.find_element_by_xpath(self.PASSWORD).text
 
     @password.setter
     def password(self, val):

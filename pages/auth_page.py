@@ -6,13 +6,12 @@ from pages.profile_page import ProfilePage
 class AuthPage(Page):
 
     @property
-    def form(self):
+    def form(self) -> AuthForm:
         return AuthForm(self.driver)
 
-    def sign_in(self, login, password):
-        form = self.form
+    def sign_in(self, login: str, password: str) -> ProfilePage:
+        form: AuthForm = self.form
         form.login = login
         form.password = password
         form.submit()
-
         return ProfilePage(self.driver)

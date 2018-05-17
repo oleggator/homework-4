@@ -1,26 +1,23 @@
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.support.ui import WebDriverWait
-
 from pages.my_groups import MyGroupsPage
 from pages.page import Page
 from pages.profile_components import LeftNavComponent
 
 
 class ProfilePage(Page):
+    NAME = '//*[@id="hook_Block_Navigation"]/div/div/a[1]/span'
 
     def __init__(self, driver):
-        super().__init__(driver)
-        WebDriverWait(self.driver, 10).until(
-            expected_conditions.presence_of_all_elements_located((By.XPATH, '//div[@data-l="t,navigation"]'))
-        )
+        super(ProfilePage, self).__init__(driver)
+        self.name = self.driver.find_element_by_xpath(self.NAME).text
 
     @property
     def left_nav(self):
         return LeftNavComponent(self.driver)
 
-    def get_groups_page(self):
-        groups = self.left_nav.groups
-        groups_path = groups.get_attribute("href")
-        groups.click()
-        return MyGroupsPage(self.driver, groups_path)
+    def to_groups_page(self) -> MyGroupsPage:
+        my_groups_page: MyGroupsPage = self.left_nav.groups_page
+        my_groups_page.open()
+        return my_groups_page
+
+    def get_name(self):
+        return self.driver.find_element_by_xpath(self.NAME).text()
