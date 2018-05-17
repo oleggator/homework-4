@@ -1,3 +1,6 @@
+from selenium.webdriver.support.wait import WebDriverWait
+
+
 class element_not_found(object):
     def __init__(self, selector, strategy):
         self.selector_script = strategy.format(selector)
@@ -5,6 +8,7 @@ class element_not_found(object):
     def __call__(self, driver):
         not_found: bool = driver.execute_script(self.selector_script)
         return not_found
+
 
 class element_not_found_by_xpath(element_not_found):
     SELECTOR_SCRIPT = '''
@@ -24,3 +28,7 @@ class element_not_found_by_css_selector(element_not_found):
 
     def __init__(self, selector):
         super().__init__(selector, self.SELECTOR_SCRIPT)
+
+
+def wait(driver, timeout=10):
+    return WebDriverWait(driver, timeout)
