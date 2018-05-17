@@ -131,7 +131,9 @@ class Like(Component):
 class AlbumControlPanel(Component):
     DELETE: str = 'ul.controls-list > li:nth-child(2) > a'
     EDIT: str = '.ic12_edit'
+    BACK: str = '.ic12.ic12_answer'
     TITLE: str = 'span.photo-h_cnt_t'
+    TITLE_EDIT: str = '.it.h-mod'
 
     def delete_album(self) -> None:
         self.edit_button.click()
@@ -146,9 +148,30 @@ class AlbumControlPanel(Component):
     def edit_button(self) -> WebElement:
         return self.driver.find_element_by_css_selector(self.EDIT)
 
+    def enable_edit(self):
+        edit_button_wrapper: List[WebElement] = self.driver.find_elements_by_css_selector(self.EDIT)
+        if len(edit_button_wrapper) == 0:
+            return
+        edit_button_wrapper[0].click()
+        waits.wait(self.driver) \
+            .until(
+            expected_conditions.presence_of_element_located((By.CSS_SELECTOR, self.BACK))
+        )
+
     @property
     def title(self) -> str:
         return self.driver.find_element_by_css_selector(self.TITLE).text
+
+    @property
+    def title_input(self) -> WebElement:
+        return self.driver.find_element_by_css_selector(self.TITLE_EDIT)
+
+    @title.setter
+    def title(self, new_title):
+        self.enable_edit()
+        self.title_input.clear()
+        self.title_input.send_keys(new_title)
+        self.disable_edit()
 
     def set_like(self, reaction: Reaction):
         like: Like = Like(self.driver)
@@ -158,6 +181,16 @@ class AlbumControlPanel(Component):
     @property
     def like(self):
         return Like(self.driver)
+
+    def disable_edit(self):
+        back_button_wrapper: List[WebElement] = self.driver.find_elements_by_css_selector(self.BACK)
+        if len(back_button_wrapper) == 0:
+            return
+        back_button_wrapper[0].click()
+        waits.wait(self.driver) \
+            .until(
+            expected_conditions.presence_of_element_located((By.CSS_SELECTOR, self.EDIT))
+        )
 
 
 class ImageCard(Component):
@@ -229,8 +262,8 @@ class PhotosPanel(Component):
 
     # TODO: rewrite due to performance issues
     def wait_uploading(self) -> None:
-        WebDriverWait(self.driver, 60).until_not(
-            expected_conditions.presence_of_element_located((By.XPATH, self.LOADER))
+        WebDriverWait(self.driver, 60).until(
+            waits.element_not_found_by_xpath((By.XPATH, self.LOADER))
         )
 
     def bulk_upload(self, images: List[str]) -> List[ImageCard]:
