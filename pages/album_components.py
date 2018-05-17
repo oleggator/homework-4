@@ -9,6 +9,7 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 
+from pages import waits
 from pages.page import Component
 
 
@@ -38,6 +39,7 @@ class Like(Component):
     LIKE_BUTTON_TEMPLATE: str = '#hook_Block_ShortcutMenuReact .{} ~ .reaction_icw'
     LIKE_COUNT: str = '.widget_count'
     LABEL: str = 'span[data-type="GROUP_ALBUM"] .widget_tx'
+    REACTION_LABEL: str = '.widget_tx.{}'
 
     def __init__(self, driver):
         super().__init__(driver)
@@ -49,7 +51,8 @@ class Like(Component):
         ActionChains(self.driver).move_to_element(like).click().perform()
         self.disable_likes()
         WebDriverWait(self.driver, 10).until(
-            expected_conditions.presence_of_element_located((By.CSS_SELECTOR, '.widget_tx.{}'.format(reaction.value)))
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, self.REACTION_LABEL.format(reaction.value)))
         )
 
     def unset_like(self):
@@ -57,8 +60,8 @@ class Like(Component):
         if current == Reaction.UNSET:
             return
         ActionChains(self.driver).move_to_element(self.like_toggle_button).click().perform()
-        WebDriverWait(self.driver, 10).until_not(
-            expected_conditions.presence_of_element_located((By.CSS_SELECTOR, '.widget_tx.{}'.format(current.value)))
+        WebDriverWait(self.driver, 10).until(
+            waits.element_not_found_by_css_selector(self.REACTION_LABEL.format(current.value))
         )
 
     @property
@@ -99,8 +102,8 @@ class Like(Component):
             node.dispatchEvent(mouseleave);
         '''.format(self.TOGGLE))
         self.TOGGLE = self.LIKE_DISABLED
-        WebDriverWait(self.driver, 10).until_not(
-            expected_conditions.presence_of_element_located((By.XPATH, self.LIKE_ENABLED))
+        WebDriverWait(self.driver, 10).until(
+            waits.element_not_found_by_xpath(self.LIKE_ENABLED)
         )
 
     @property
