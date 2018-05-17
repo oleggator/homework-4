@@ -3,6 +3,7 @@ from enum import Enum
 from typing import List
 from urllib import parse
 
+from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions
@@ -28,10 +29,12 @@ class Reaction(Enum):
     LOL = '__react-lol'
     SORROW = '__react-sorrow'
     LIKE = '__react-like'
+    UNSET = ''
 
 
 class Like(Component):
-    LIKE_TOGGLE: str = "//span[contains(@class, 'ic_klass')]/ancestor::*[starts-with(@id, 'hook_Block')][1]"
+    LIKE_DISABLED: str = "//span[@data-type='GROUP_ALBUM']/ancestor::*[starts-with(@id, 'hook_Block')][1]"
+    LIKE_ENABLED: str = "//div[@class='__vis']"
     LIKE_BUTTON_TEMPLATE: str = '#hook_Block_ShortcutMenuReact .{} ~ .reaction_icw'
     LIKE_COUNT: str = '.widget_count'
     LABEL: str = 'span[data-type="GROUP_ALBUM"] .widget_tx'
@@ -39,53 +42,87 @@ class Like(Component):
     def __init__(self, driver):
         super().__init__(driver)
         self.reactions_mapping = {reaction.value: reaction for reaction in Reaction}
+        self.TOGGLE = self.LIKE_DISABLED
 
     def set_like(self, reaction: Reaction = Reaction.LIKE):
-        like: WebElement = self.get_like_button(reaction)
-        like.click()
+        like, selector = self.get_reaction_button(reaction)
+        ActionChains(self.driver).move_to_element(like).click().perform()
+        self.disable_likes()
+        WebDriverWait(self.driver, 10).until(
+            expected_conditions.presence_of_element_located((By.CSS_SELECTOR, '.widget_tx.{}'.format(reaction.value)))
+        )
 
     def unset_like(self):
-        self.like_enable_button.click()
+        current: Reaction = self.reaction
+        if current == Reaction.UNSET:
+            return
+        ActionChains(self.driver).move_to_element(self.like_toggle_button).click().perform()
+        WebDriverWait(self.driver, 10).until_not(
+            expected_conditions.presence_of_element_located((By.CSS_SELECTOR, '.widget_tx.{}'.format(current.value)))
+        )
 
     @property
-    def like_enable_button(self):
-        return self.driver.find_element_by_xpath(self.LIKE_TOGGLE)
+    def like_toggle_button(self):
+        return self.driver.find_element_by_xpath(self.TOGGLE)
 
     def generate_like_button_selector(self, reaction: Reaction) -> str:
         return self.LIKE_BUTTON_TEMPLATE.format(reaction.value)
 
-    def get_like_button(self, reaction: Reaction) -> WebElement:
+    def get_reaction_button(self, reaction: Reaction) -> (WebElement, str):
         button_selector: str = self.generate_like_button_selector(reaction)
         self.enable_likes(button_selector)
-        return self.driver.find_element_by_css_selector(button_selector)
+        return self.driver.find_element_by_css_selector(button_selector), button_selector
 
     def enable_likes(self, selector: str):
+        WebDriverWait(self.driver, 10).until(
+            expected_conditions.presence_of_element_located((By.XPATH, self.TOGGLE))
+        )
         self.driver.execute_script('''
             let mouseenter = new Event('mouseenter');    
             let node = document.evaluate("{}",document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+            document.querySelector('.ic_klass').dispatchEvent(mouseenter)
             node.dispatchEvent(mouseenter);
-        '''.format(self.LIKE_TOGGLE))
+        '''.format(self.TOGGLE))
 
         WebDriverWait(self.driver, 10).until(
             expected_conditions.presence_of_element_located((By.CSS_SELECTOR, selector))
+        )
+        self.TOGGLE = self.LIKE_ENABLED
+
+    def disable_likes(self):
+        WebDriverWait(self.driver, 10).until(
+            expected_conditions.presence_of_element_located((By.XPATH, self.TOGGLE))
+        )
+        self.driver.execute_script('''
+            let mouseleave = new Event('mouseleave');    
+            let node = document.evaluate("{}",document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;            
+            node.dispatchEvent(mouseleave);
+        '''.format(self.TOGGLE))
+        self.TOGGLE = self.LIKE_DISABLED
+        WebDriverWait(self.driver, 10).until_not(
+            expected_conditions.presence_of_element_located((By.XPATH, self.LIKE_ENABLED))
         )
 
     @property
     def description(self) -> dict:
         return {
-            'reaction': self.reaction.value,
+            'reaction': self.reaction,
             'counter': self.like_counter
         }
 
     @property
-    def like_counter(self) -> str:
-        return self.driver.find_element_by_css_selector(self.LIKE_COUNT).text
+    def like_counter(self) -> int:
+        counter: str = self.driver.find_element_by_css_selector(self.LIKE_COUNT).text
+        return int(counter)
 
     @property
     def reaction(self) -> Reaction:
-        reaction_class_list: str = self.driver.find_element_by_css_selector(self.LABEL).get_attribute('class')
+        reaction_class_list: str = self.driver.find_element_by_css_selector(self.LABEL) \
+            .get_attribute('class')
         reaction_class: str = reaction_class_list.replace('widget_tx', '').strip()
-        return self.reactions_mapping[reaction_class]
+        if reaction_class == '':
+            return Reaction.UNSET
+        return self.reactions_mapping.get(reaction_class, Reaction.UNSET)
 
 
 class AlbumControlPanel(Component):
