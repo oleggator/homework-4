@@ -1,6 +1,7 @@
 import os
 from enum import Enum
-from typing import List
+from typing import List, Optional
+from urllib import parse
 
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
@@ -145,22 +146,25 @@ class Like(Component):
 
 class ImageCard(Component):
     EDIT_TEMPLATE: str = '//div[@id="trigger_{}"]'
-    DELETE_TEMPLATE: str = '#popup_{} .ic_delete'
+    DELETE_BUTTON_TEMPLATE: str = '#popup_{} .ic_delete'
     MAKE_MAIN_TEMPLATE: str = '#popup_{} .ic_make-main'
     EDIT_DESCRIPTION_TEMPLATE: str = '//[@id=descrInp{}]'
+    IMAGE_TEMPLATE: str = '#img_{}'
+    RESTORE_BUTTON_TEMPLATE: str = '#hook_Block_DeleteRestorePhotoMRB{} a'
 
     def __init__(self, driver, img_id: str):
         super().__init__(driver)
         self.id: str = img_id
+        self.IMAGE = self.IMAGE_TEMPLATE.format(self.id)
         self.EDIT_DESCRIPTION: str = self.EDIT_DESCRIPTION_TEMPLATE.format(self.id)
         self.EDIT: str = self.EDIT_TEMPLATE.format(self.id)
-        self.DELETE: str = self.DELETE_TEMPLATE.format(self.id)
-
+        self.DELETE: str = self.DELETE_BUTTON_TEMPLATE.format(self.id)
         self.MAKE_MAIN: str = self.MAKE_MAIN_TEMPLATE.format(self.id)
+        self.RESTORE: str = self.RESTORE_BUTTON_TEMPLATE.format(self.id)
 
     @property
     def description(self) -> str:
-        return self.driver.find_element_by_xpath(self.EDIT_DESCRIPTION).value()
+        return self.driver.find_element_by_xpath(self.EDIT_DESCRIPTION).get_attribute('value')
 
     @property
     def edit(self) -> WebElement:
@@ -178,12 +182,14 @@ class ImageCard(Component):
         self.driver.execute_script('''
             document.querySelector(`{}`).click()
         '''.format(self.MAKE_MAIN))
-        self.driver.find_element_by_css_selector(self.MAKE_MAIN).click()
 
     def delete_image_card(self) -> None:
         self.driver.execute_script('''
             document.querySelector(`{}`).click()
         '''.format(self.DELETE))
+        waits.wait(self.driver).until(
+            expected_conditions.presence_of_element_located((By.CSS_SELECTOR, self.RESTORE))
+        )
 
 
 class AlbumControlPanel(Component):
@@ -266,48 +272,65 @@ class AlbumControlPanel(Component):
 
     @property
     def main_photo(self) -> ImageCard:
-        img_id: str = self.driver.getAttribute('id').replace('img_', '')
+        img_id: str = id_from_src(self.main_img_raw.get_attribute('src'))
         return ImageCard(self.driver, img_id)
+
+    def commit_changes(self) -> None:
+        self.disable_edit()
 
 
 class PhotosPanel(Component):
     LOADER: str = "//div[@class='photo-card_loading']"
 
-    PHOTOS_WEAK: str = '.photo-card_cnt img'
-    PHOTOS_STRONG: str = '//a[@class="photo-card_cnt"]/img[starts-with(@id, "img_")]'
+    PHOTOS: str = '.photo-card_cnt img'
+    UPLOADED_PHOTOS: str = '//li[@class="ugrid_i"]/div[starts-with(@id, "hook_Block_UploadedGroupPhotoCardBlock")]'
 
     UPLOAD: str = '//input[@name="photo"]'
-    UPLOADING_COMPLETE: str = '#uploadingCompleteMsg.invisible'
+    IMAGE_LOCATOR: str = '#img_{}'
 
     @property
-    @web_element_locator((By.XPATH, PHOTOS_STRONG))
+    @web_element_locator((By.CSS_SELECTOR, PHOTOS))
     def images(self) -> List[WebElement]:
-        return self.driver.find_element_by_xpath(self.PHOTOS_STRONG)
+        return self.driver.find_elements_by_css_selector(self.PHOTOS)
 
     @property
     @web_element_locator((By.XPATH, UPLOAD))
     def upload_input(self) -> WebElement:
         return self.driver.find_element_by_xpath(self.UPLOAD)
 
-    @web_element_locator((By.XPATH, PHOTOS_WEAK))
     def get_last(self):
-        identifier: str = self.driver.execute_script('''
-            return document.querySelectorAll(`{}`)[0].id.replace(/img_/, '')
-        '''.format(self.PHOTOS_WEAK))
-        return ImageCard(self.driver, identifier)
+        id_img: str = id_from_web_element(self.images[0])
+        return ImageCard(self.driver, id_img)
 
     def upload(self, path: str) -> ImageCard:
         path = os.path.abspath(path)
         self.upload_input.send_keys(path)
+        self.wait_uploading()
         return self.get_last()
 
-    # TODO: rewrite due to performance issues
     def wait_uploading(self, count=1) -> None:
-        waits.wait(self.driver, 10).until(
-            waits.number_of_elements_located((By.XPATH, self.PHOTOS_STRONG), count)
+        waits.wait(self.driver).until(
+            waits.number_of_elements_located((By.XPATH, self.UPLOADED_PHOTOS), count)
         )
 
     def bulk_upload(self, images: List[str]) -> List[ImageCard]:
         paths: str = '\n'.join([os.path.abspath(path) for path in images])
         self.upload_input.send_keys(paths)
-        return [ImageCard(self.driver, img.get_attribute('id').replace('img_', '')) for img in self.images]
+        self.wait_uploading(len(images))
+        return [ImageCard(self.driver, id_from_web_element(img)) for img in self.images]
+
+    def find_image(self, image_id) -> Optional[ImageCard]:
+        image_wrapper: List[ImageCard] = self.driver.find_elements_by_css_selector(self.IMAGE_LOCATOR.format(image_id))
+        if len(image_wrapper) == 0:
+            return None
+        return image_wrapper[0]
+
+
+def id_from_web_element(img: WebElement) -> str:
+    return img.get_attribute('id').replace('img_', '')
+
+
+def id_from_src(src: str) -> str:
+    query: str = parse.urlparse(src).query
+    id_param: dict = parse.parse_qs(query)
+    return id_param['id'][0]
