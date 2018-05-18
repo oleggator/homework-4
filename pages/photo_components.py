@@ -1,8 +1,10 @@
 from enum import Enum
 
+from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
 from pages.page import Component, url_changer
+from pages.waits import web_element_locator
 
 
 class AlbumType(Enum):
@@ -24,6 +26,7 @@ class AlbumCreateModalForm(Component):
         self.sticky_album: bool = description['sticky_album']
 
     @property
+    @web_element_locator((By.XPATH, TITLE))
     def title(self):
         return self.driver.find_element_by_xpath(self.TITLE)
 
@@ -32,6 +35,7 @@ class AlbumCreateModalForm(Component):
         self.title.send_keys(val)
 
     @property
+    @web_element_locator((By.XPATH, ADMINS_ONLY))
     def admins_only(self) -> WebElement:
         return self.driver.find_element_by_xpath(self.ADMINS_ONLY)
 
@@ -44,6 +48,7 @@ class AlbumCreateModalForm(Component):
             elem.click()
 
     @property
+    @web_element_locator((By.XPATH, STICKY_ALBUM))
     def sticky_album(self) -> WebElement:
         return self.driver.find_element_by_xpath(self.STICKY_ALBUM)
 
@@ -68,10 +73,12 @@ class AlbumTypeChoiceModal(Component):
     CONTEST: str = '////i[@class="add-stub_img add-stub_img__contest"]/parent::a/parent::div[@class="ugrid_i"]/child::a'
 
     @property
+    @web_element_locator((By.XPATH, ALBUM))
     def album(self) -> WebElement:
         return self.driver.find_element_by_xpath(self.ALBUM)
 
     @property
+    @web_element_locator((By.XPATH, CONTEST))
     def contest(self) -> WebElement:
         return self.driver.find_element_by_xpath(self.CONTEST)
 

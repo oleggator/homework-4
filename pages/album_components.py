@@ -1,7 +1,6 @@
 import os
 from enum import Enum
 from typing import List
-from urllib import parse
 
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
@@ -11,6 +10,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 from pages import waits
 from pages.page import Component
+from pages.waits import web_element_locator
 
 
 class AlbumDeleteConfirmModal(Component):
@@ -18,10 +18,20 @@ class AlbumDeleteConfirmModal(Component):
     CANCEL: str = '//input[@id="button_cancel_confirm"]'
 
     def confirm(self) -> None:
-        self.driver.find_element_by_xpath(self.CONFIRM).click()
+        self.confirm_button.click()
 
     def cancel(self) -> None:
-        self.driver.find_element_by_xpath(self.CANCEL).click()
+        self.cancel_button.click()
+
+    @property
+    @web_element_locator((By.XPATH, CONFIRM))
+    def confirm_button(self) -> WebElement:
+        return self.driver.find_element_by_xpath(self.CONFIRM)
+
+    @property
+    @web_element_locator((By.XPATH, CANCEL))
+    def cancel_button(self) -> WebElement:
+        return self.driver.find_element_by_xpath(self.CANCEL)
 
 
 class Reaction(Enum):
@@ -50,10 +60,6 @@ class Like(Component):
         like, selector = self.get_reaction_button(reaction)
         ActionChains(self.driver).move_to_element(like).click().perform()
         self.disable_likes()
-        WebDriverWait(self.driver, 10).until(
-            expected_conditions.presence_of_element_located(
-                (By.CSS_SELECTOR, self.REACTION_LABEL.format(reaction.value)))
-        )
 
     def unset_like(self):
         current: Reaction = self.reaction
@@ -114,18 +120,70 @@ class Like(Component):
         }
 
     @property
+    @web_element_locator((By.CSS_SELECTOR, LIKE_COUNT))
+    def like_counter_elem(self) -> WebElement:
+        return self.driver.find_element_by_css_selector(self.LIKE_COUNT)
+
+    @property
     def like_counter(self) -> int:
-        counter: str = self.driver.find_element_by_css_selector(self.LIKE_COUNT).text
+        counter: str = self.like_counter_elem.text
         return int(counter)
 
     @property
     def reaction(self) -> Reaction:
-        reaction_class_list: str = self.driver.find_element_by_css_selector(self.LABEL) \
-            .get_attribute('class')
+        reaction_class_list: str = self.label.get_attribute('class')
         reaction_class: str = reaction_class_list.replace('widget_tx', '').strip()
         if reaction_class == '':
             return Reaction.UNSET
         return self.reactions_mapping.get(reaction_class, Reaction.UNSET)
+
+    @property
+    @web_element_locator((By.CSS_SELECTOR, LABEL))
+    def label(self) -> WebElement:
+        return self.driver.find_element_by_css_selector(self.LABEL)
+
+
+class ImageCard(Component):
+    EDIT_TEMPLATE: str = '//div[@id="trigger_{}"]'
+    DELETE_TEMPLATE: str = '#popup_{} .ic_delete'
+    MAKE_MAIN_TEMPLATE: str = '#popup_{} .ic_make-main'
+    EDIT_DESCRIPTION_TEMPLATE: str = '//[@id=descrInp{}]'
+
+    def __init__(self, driver, img_id: str):
+        super().__init__(driver)
+        self.id: str = img_id
+        self.EDIT_DESCRIPTION: str = self.EDIT_DESCRIPTION_TEMPLATE.format(self.id)
+        self.EDIT: str = self.EDIT_TEMPLATE.format(self.id)
+        self.DELETE: str = self.DELETE_TEMPLATE.format(self.id)
+
+        self.MAKE_MAIN: str = self.MAKE_MAIN_TEMPLATE.format(self.id)
+
+    @property
+    def description(self) -> str:
+        return self.driver.find_element_by_xpath(self.EDIT_DESCRIPTION).value()
+
+    @property
+    def edit(self) -> WebElement:
+        return self.driver.find_element_by_xpath(self.EDIT)
+
+    @property
+    def delete_button(self) -> WebElement:
+        return self.driver.find_element_by_css_selector(self.DELETE)
+
+    @description.setter
+    def description(self, value) -> None:
+        self.driver.find_element_by_xpath(self.EDIT_DESCRIPTION).send_keys(value)
+
+    def make_main(self):
+        self.driver.execute_script('''
+            document.querySelector(`{}`).click()
+        '''.format(self.MAKE_MAIN))
+        self.driver.find_element_by_css_selector(self.MAKE_MAIN).click()
+
+    def delete_image_card(self) -> None:
+        self.driver.execute_script('''
+            document.querySelector(`{}`).click()
+        '''.format(self.DELETE))
 
 
 class AlbumControlPanel(Component):
@@ -135,16 +193,23 @@ class AlbumControlPanel(Component):
     TITLE: str = 'span.photo-h_cnt_t'
     TITLE_EDIT: str = '.it.h-mod'
 
+    MAIN_PHOTO: str = '.photo-panel_cover img'
+
+    def __init__(self, driver):
+        super().__init__(driver)
+
     def delete_album(self) -> None:
         self.edit_button.click()
         self.delete_button.click()
         AlbumDeleteConfirmModal(self.driver).confirm()
 
     @property
+    @web_element_locator((By.CSS_SELECTOR, DELETE))
     def delete_button(self) -> WebElement:
         return self.driver.find_element_by_css_selector(self.DELETE)
 
     @property
+    @web_element_locator((By.CSS_SELECTOR, EDIT))
     def edit_button(self) -> WebElement:
         return self.driver.find_element_by_css_selector(self.EDIT)
 
@@ -159,10 +224,12 @@ class AlbumControlPanel(Component):
         )
 
     @property
+    @web_element_locator((By.CSS_SELECTOR, TITLE))
     def title(self) -> str:
         return self.driver.find_element_by_css_selector(self.TITLE).text
 
     @property
+    @web_element_locator((By.CSS_SELECTOR, TITLE_EDIT))
     def title_input(self) -> WebElement:
         return self.driver.find_element_by_css_selector(self.TITLE_EDIT)
 
@@ -192,83 +259,55 @@ class AlbumControlPanel(Component):
             expected_conditions.presence_of_element_located((By.CSS_SELECTOR, self.EDIT))
         )
 
-
-class ImageCard(Component):
-    EDIT_TEMPLATE: str = '//div[@id="trigger_{}"]'
-    DELETE_TEMPLATE: str = '#popup_{} .ic_delete'
-    MAKE_MAIN_TEMPLATE: str = '#popup_{} .ic_make-main'
-    EDIT_DESCRIPTION_TEMPLATE: str = '//[@id=descrInp{}]'
-
-    def __init__(self, driver, src):
-        super().__init__(driver)
-        self.src = src
-        query_string: str = parse.urlparse(self.src).query
-        self.id: str = parse.parse_qs(query_string)['id'][0]
-        self.EDIT_DESCRIPTION: str = self.EDIT_DESCRIPTION_TEMPLATE.format(self.id)
-        self.EDIT: str = self.EDIT_TEMPLATE.format(self.id)
-        self.DELETE: str = self.DELETE_TEMPLATE.format(self.id)
-        self.MAKE_MAIN: str = self.MAKE_MAIN_TEMPLATE.format(self.id)
+    @property
+    @web_element_locator((By.CSS_SELECTOR, MAIN_PHOTO))
+    def main_img_raw(self):
+        return self.driver.find_element_by_css_selector(self.MAIN_PHOTO)
 
     @property
-    def description(self) -> str:
-        return self.driver.find_element_by_xpath(self.EDIT_DESCRIPTION).value()
-
-    @property
-    def edit(self) -> WebElement:
-        return self.driver.find_element_by_xpath(self.EDIT)
-
-    @property
-    def delete_button(self) -> WebElement:
-        return self.driver.find_element_by_css_selector(self.DELETE)
-
-    @description.setter
-    def description(self, value) -> None:
-        self.driver.find_element_by_xpath(self.EDIT_DESCRIPTION).send_keys(value)
-
-    def make_main(self):
-        pass
-
-    def delete_image_card(self) -> None:
-        self.driver.execute_script('''
-            document.querySelector('{}').click()
-        '''.format(self.DELETE))
+    def main_photo(self) -> ImageCard:
+        img_id: str = self.driver.getAttribute('id').replace('img_', '')
+        return ImageCard(self.driver, img_id)
 
 
 class PhotosPanel(Component):
-    LOADER: str = '//div[@class="photo-card_loading"]'
-    PHOTOS: str = 'span.photo-card_cnt img'
+    LOADER: str = "//div[@class='photo-card_loading']"
+
+    PHOTOS_WEAK: str = '.photo-card_cnt img'
+    PHOTOS_STRONG: str = '//a[@class="photo-card_cnt"]/img[starts-with(@id, "img_")]'
+
     UPLOAD: str = '//input[@name="photo"]'
-
-    def __init__(self, driver):
-        super().__init__(driver)
+    UPLOADING_COMPLETE: str = '#uploadingCompleteMsg.invisible'
 
     @property
+    @web_element_locator((By.XPATH, PHOTOS_STRONG))
     def images(self) -> List[WebElement]:
-        return self.driver.find_elements_by_css_selector(self.PHOTOS)
+        return self.driver.find_element_by_xpath(self.PHOTOS_STRONG)
 
     @property
+    @web_element_locator((By.XPATH, UPLOAD))
     def upload_input(self) -> WebElement:
         return self.driver.find_element_by_xpath(self.UPLOAD)
 
+    @web_element_locator((By.XPATH, PHOTOS_WEAK))
     def get_last(self):
-        src: str = self.images[0].get_attribute('src')
-        return ImageCard(self.driver, src)
+        identifier: str = self.driver.execute_script('''
+            return document.querySelectorAll(`{}`)[0].id.replace(/img_/, '')
+        '''.format(self.PHOTOS_WEAK))
+        return ImageCard(self.driver, identifier)
 
     def upload(self, path: str) -> ImageCard:
         path = os.path.abspath(path)
-        self.driver.find_element_by_xpath(self.UPLOAD).send_keys(path)
-        self.wait_uploading()
+        self.upload_input.send_keys(path)
         return self.get_last()
 
     # TODO: rewrite due to performance issues
-    def wait_uploading(self) -> None:
-        WebDriverWait(self.driver, 60).until(
-            waits.element_not_found_by_xpath((By.XPATH, self.LOADER))
+    def wait_uploading(self, count=1) -> None:
+        waits.wait(self.driver, 10).until(
+            waits.number_of_elements_located((By.XPATH, self.PHOTOS_STRONG), count)
         )
 
     def bulk_upload(self, images: List[str]) -> List[ImageCard]:
-        upload_input: WebElement = self.upload_input
         paths: str = '\n'.join([os.path.abspath(path) for path in images])
-        upload_input.send_keys(paths)
-        self.wait_uploading()
-        return [ImageCard(self.driver, img.get_attribute('src')) for img in self.images]
+        self.upload_input.send_keys(paths)
+        return [ImageCard(self.driver, img.get_attribute('id').replace('img_', '')) for img in self.images]
