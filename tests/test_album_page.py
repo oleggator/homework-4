@@ -26,6 +26,7 @@ class AlbumPageTest(unittest.TestCase):
         'admins_only': False,
         'sticky_album': False,
     }
+    SAMPLE_TITLE: str = 'test-new-title'
 
     @classmethod
     def setUpClass(cls):
@@ -59,25 +60,38 @@ class AlbumPageTest(unittest.TestCase):
 
     def test_album_like(self):
         like: Like = self.album.control_panel.set_like(Reaction.LIKE)
-        like_result: Like = self.album.control_panel.like
-        self.assertEqual(like.description, like_result.description)
+        self.assertEqual({'reaction': Reaction.LIKE, 'counter': 1}, like.description)
 
     def test_album_like_wow(self):
         like: Like = self.album.control_panel.set_like(Reaction.WOW)
-        like_result: Like = self.album.control_panel.like
-        self.assertEqual(like.description, like_result.description)
+        self.assertEqual({'reaction': Reaction.WOW, 'counter': 1}, like.description)
 
     def test_album_like_heart(self):
         like: Like = self.album.control_panel.set_like(Reaction.HEART)
-        like_result: Like = self.album.control_panel.like
-        self.assertEqual(like.description, like_result.description)
+        self.assertEqual({'reaction': Reaction.HEART, 'counter': 1}, like.description)
 
     def test_album_like_sorrow(self):
         like: Like = self.album.control_panel.set_like(Reaction.SORROW)
-        like_result: Like = self.album.control_panel.like
-        self.assertEqual(like.description, like_result.description)
+        self.assertEqual({'reaction': Reaction.SORROW, 'counter': 1}, like.description)
 
     def test_album_like_lol(self):
         like: Like = self.album.control_panel.set_like(Reaction.LOL)
-        like_result: Like = self.album.control_panel.like
-        self.assertEqual(like.description, like_result.description)
+        self.assertEqual({'reaction': Reaction.LOL, 'counter': 1}, like.description)
+
+    def test_album_like_unset(self):
+        self.album.control_panel \
+            .set_like(Reaction.LIKE) \
+            .unset_like()
+        like: Like = self.album.control_panel.like
+        self.assertEqual({'reaction': Reaction.UNSET, 'counter': 0}, like.description)
+
+    def test_album_change_title(self):
+        self.album.title = self.SAMPLE_TITLE
+        self.assertEqual(self.SAMPLE_TITLE, self.album.title)
+
+    def test_album_change_to_empty_title(self):
+        origin: str = self.ALBUM['title']
+        self.album.title = ''
+        self.assertEqual(origin, self.album.title)
+
+
