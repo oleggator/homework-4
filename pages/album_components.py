@@ -163,7 +163,7 @@ class ImageCard(Component):
 
 class PhotosPanel(Component):
     LOADER: str = '//div[@class="photo-card_loading"]'
-    PHOTOS: str = 'span.photo-card_cnt img'
+    PHOTOS: str = '.photo-card_cnt img'
     UPLOAD: str = '//input[@name="photo"]'
 
     def __init__(self, driver):
