@@ -40,7 +40,6 @@ class AlbumPageImagesManagementTest(unittest.TestCase):
             command_executor='http://127.0.0.1:4444/wd/hub',
             desired_capabilities=getattr(DesiredCapabilities, cls.browser).copy()
         )
-        cls.driver.implicitly_wait(10)
         login: str = os.environ.get('LOGIN')
         password: str = os.environ.get('PASSWORD')
 
@@ -79,7 +78,20 @@ class AlbumPageImagesManagementTest(unittest.TestCase):
         uploaded: ImageCard = self.album.photos_panel.get_last()
         self.assertEqual(image.id, uploaded.id)
 
-    def
+    def test_image_delete(self):
+        image: ImageCard = self.album.upload_photo(self.SAMPLE_IMAGE_PATH)
+        image.delete_image_card()
+        self.album.control_panel.commit_changes()
+
+        self.assertIsNone(self.album.image(image.id))
+
+    @unittest.skip("under development")
+    def test_image_make_main(self):
+        self.album.upload_photo(self.SAMPLE_IMAGE_PATH)
+        final: ImageCard = self.album.upload_photo(self.SAMPLE_IMAGE_PATH)
+        final.make_main()
+        main: ImageCard = self.album.control_panel.main_photo
+        self.assertEqual(final.id, main.id)
 
     @unittest.skipIf(os.getenv('BROWSER', 'CHROME') == 'FIREFOX',
                      "simple multiply images upload way was not working in firefox")
@@ -87,4 +99,3 @@ class AlbumPageImagesManagementTest(unittest.TestCase):
         images: List[ImageCard] = self.album.upload_photos(self.SAMPLE_BULK_IMAGES)
         uploaded: List[ImageCard] = self.album.photos_panel.images
         self.assertEqual(len(images), len(uploaded))
-
