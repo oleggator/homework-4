@@ -52,13 +52,25 @@ class number_of_elements_located(object):
 class web_element_locator(object):
 
     def __init__(self, locator: Locator, timeout: int = 10):
-        self.locator = locator
-        self.timeout = timeout
+        self.locator: Locator = locator
+        self.timeout: int = timeout
 
     def __call__(self, method):
         def wrapped_f(other, *args, **kwargs):
             wait(other.driver, self.timeout).until(
                 expected_conditions.presence_of_all_elements_located(self.locator)
+            )
+            return method(other, *args, **kwargs)
+
+        return wrapped_f
+
+
+class button_locator(web_element_locator):
+
+    def __call__(self, method):
+        def wrapped_f(other, *args, **kwargs):
+            wait(other.driver, self.timeout).until(
+                expected_conditions.element_to_be_clickable(self.locator)
             )
             return method(other, *args, **kwargs)
 

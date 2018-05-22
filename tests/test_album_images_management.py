@@ -5,7 +5,7 @@ from typing import List
 from selenium import webdriver
 from selenium.webdriver import DesiredCapabilities
 
-from pages.album_components import ImageCard
+from pages.album_components import ImageCard, ExpandedImageCard
 from pages.album_page import AlbumPage
 from pages.auth_page import AuthPage
 from pages.group_page import GroupPage
@@ -27,6 +27,7 @@ class AlbumPageImagesManagementTest(unittest.TestCase):
         'admins_only': False,
         'sticky_album': False,
     }
+    SAMPLE_IMAGE_DESCRIPTION: str = 'test-image-description'
 
     SAMPLE_IMAGE_PATH: str = 'assets/sample_image.jpg'
     SAMPLE_BIG_IMAGE_PATH: str = 'assets/sample_big_image.jpg'
@@ -82,8 +83,15 @@ class AlbumPageImagesManagementTest(unittest.TestCase):
         image: ImageCard = self.album.upload_photo(self.SAMPLE_IMAGE_PATH)
         image.delete_image_card()
         self.album.control_panel.commit_changes()
-
         self.assertIsNone(self.album.image(image.id))
+
+    def test_set_image_description(self):
+        image: ImageCard = self.album.upload_photo(self.SAMPLE_IMAGE_PATH)
+        self.album.control_panel.enable_edit()
+        image.description = self.SAMPLE_IMAGE_DESCRIPTION
+        self.album.control_panel.disable_edit()
+        expanded: ExpandedImageCard = image.expand()
+        self.assertEquals(self.SAMPLE_IMAGE_DESCRIPTION, expanded.description)
 
     @unittest.skip("under development")
     def test_image_make_main(self):
@@ -94,7 +102,7 @@ class AlbumPageImagesManagementTest(unittest.TestCase):
         self.assertEqual(final.id, main.id)
 
     @unittest.skipIf(os.getenv('BROWSER', 'CHROME') == 'FIREFOX',
-                     "simple multiply images upload way was not working in firefox")
+                     "seems that multiply images upload is impossible in geckodirver")
     def test_bulk_image_upload(self):
         images: List[ImageCard] = self.album.upload_photos(self.SAMPLE_BULK_IMAGES)
         uploaded: List[ImageCard] = self.album.photos_panel.images

@@ -11,7 +11,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 from pages import waits
 from pages.page import Component
-from pages.waits import web_element_locator
+from pages.waits import web_element_locator, button_locator
 
 
 class AlbumDeleteConfirmModal(Component):
@@ -144,11 +144,20 @@ class Like(Component):
         return self.driver.find_element_by_css_selector(self.LABEL)
 
 
+class ExpandedImageCard(Component):
+    DESCRIPTION = 'span[data-link-source="photo-desc"]'
+
+    @property
+    @web_element_locator((By.CSS_SELECTOR, DESCRIPTION))
+    def description(self) -> str:
+        return self.driver.find_element_by_css_selector(self.DESCRIPTION).text
+
+
 class ImageCard(Component):
     EDIT_TEMPLATE: str = '//div[@id="trigger_{}"]'
     DELETE_BUTTON_TEMPLATE: str = '#popup_{} .ic_delete'
     MAKE_MAIN_TEMPLATE: str = '#popup_{} .ic_make-main'
-    EDIT_DESCRIPTION_TEMPLATE: str = '//[@id=descrInp{}]'
+    EDIT_DESCRIPTION_TEMPLATE: str = '//textarea[@id="descrInp{}"]'
     IMAGE_TEMPLATE: str = '#img_{}'
     RESTORE_BUTTON_TEMPLATE: str = '#hook_Block_DeleteRestorePhotoMRB{} a'
 
@@ -178,6 +187,10 @@ class ImageCard(Component):
     def description(self, value) -> None:
         self.driver.find_element_by_xpath(self.EDIT_DESCRIPTION).send_keys(value)
 
+    @property
+    def image_src(self) -> WebElement:
+        return self.driver.find_element_by_css_selector(self.IMAGE)
+
     def make_main(self):
         self.driver.execute_script('''
             document.querySelector(`{}`).click()
@@ -190,6 +203,10 @@ class ImageCard(Component):
         waits.wait(self.driver).until(
             expected_conditions.presence_of_element_located((By.CSS_SELECTOR, self.RESTORE))
         )
+
+    def expand(self) -> ExpandedImageCard:
+        self.image_src.click()
+        return ExpandedImageCard(self.driver)
 
 
 class AlbumControlPanel(Component):
@@ -210,12 +227,12 @@ class AlbumControlPanel(Component):
         AlbumDeleteConfirmModal(self.driver).confirm()
 
     @property
-    @web_element_locator((By.CSS_SELECTOR, DELETE))
+    @button_locator((By.CSS_SELECTOR, DELETE))
     def delete_button(self) -> WebElement:
         return self.driver.find_element_by_css_selector(self.DELETE)
 
     @property
-    @web_element_locator((By.CSS_SELECTOR, EDIT))
+    @button_locator((By.CSS_SELECTOR, EDIT))
     def edit_button(self) -> WebElement:
         return self.driver.find_element_by_css_selector(self.EDIT)
 
