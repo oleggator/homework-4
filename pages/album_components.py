@@ -3,6 +3,7 @@ from enum import Enum
 from typing import List, Optional
 from urllib import parse
 
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
@@ -147,7 +148,7 @@ class Like(Component):
 
 class AlbumControlPanel(Component):
     DELETE: str = 'ul.controls-list > li:nth-child(2) > a'
-    EDIT: str = '.ic12_edit'
+    EDIT: str = '.photo-menu_edit a'
     BACK: str = '.ic12.ic12_answer'
     TITLE: str = 'span.photo-h_cnt_t'
     TITLE_EDIT: str = '.it.h-mod'
@@ -172,11 +173,16 @@ class AlbumControlPanel(Component):
     def edit_button(self) -> WebElement:
         return self.driver.find_element_by_css_selector(self.EDIT)
 
+    @property
+    @button_locator((By.CSS_SELECTOR, BACK))
+    def back_button(self) -> WebElement:
+        return self.driver.find_element_by_css_selector(self.BACK)
+
     def enable_edit(self):
         edit_button_wrapper: List[WebElement] = self.driver.find_elements_by_css_selector(self.EDIT)
         if len(edit_button_wrapper) == 0:
             return
-        edit_button_wrapper[0].click()
+        self.edit_button.click()
         waits.wait(self.driver) \
             .until(
             expected_conditions.presence_of_element_located((By.CSS_SELECTOR, self.BACK))
@@ -212,7 +218,7 @@ class AlbumControlPanel(Component):
         back_button_wrapper: List[WebElement] = self.driver.find_elements_by_css_selector(self.BACK)
         if len(back_button_wrapper) == 0:
             return
-        back_button_wrapper[0].click()
+        self.back_button.click()
         waits.wait(self.driver) \
             .until(
             expected_conditions.presence_of_element_located((By.CSS_SELECTOR, self.EDIT))
@@ -230,7 +236,7 @@ class AlbumControlPanel(Component):
 
     @main_photo.setter
     def main_photo(self, new_main_photo: ImageCard):
-        new_main_photo.make_main().confirm()
+        self.request_main_photo(new_main_photo).confirm()
 
     def request_main_photo(self, new_main_photo: ImageCard) -> ConfirmMakeMainModal:
         modal: ConfirmMakeMainModal = new_main_photo.make_main()
@@ -246,9 +252,12 @@ class AlbumControlPanel(Component):
     def create_main_photo_change_waiter(self, new_id):
         def waiter(driver):
             main_photo: WebElement = driver.find_element_by_css_selector(self.MAIN_PHOTO)
-            found_id: str = id_from_src(main_photo.get_attribute('src'))
-            if found_id == new_id:
-                return main_photo
+            try:
+                found_id: str = id_from_src(main_photo.get_attribute('src'))
+                if found_id == new_id:
+                    return main_photo
+            except StaleElementReferenceException:
+                return False
             return False
 
         return waiter
@@ -274,17 +283,25 @@ class PhotosPanel(Component):
         return self.driver.find_element_by_xpath(self.UPLOAD)
 
     def get_first(self):
-        id_img: str = id_from_web_element(self.images[0])
+        id_img: str = ''
+        if self.driver.name.lower() == 'firefox':
+            id_img = id_from_web_element(self.images[-1])
+        else:
+            id_img = id_from_web_element(self.images[0])
         return ImageCard(self.driver, id_img)
 
     def get_last(self):
-        id_img: str = id_from_web_element(self.images[-1])
+        id_img: str = ''
+        if self.driver.name.lower() == 'firefox':
+            id_img = id_from_web_element(self.images[0])
+        else:
+            id_img = id_from_web_element(self.images[-1])
         return ImageCard(self.driver, id_img)
 
-    def upload(self, path: str) -> ImageCard:
+    def upload(self, path: str, current=0) -> ImageCard:
         path = os.path.abspath(path)
         self.upload_input.send_keys(path)
-        self.wait_uploading()
+        self.wait_uploading(current + 1)
         return self.get_first()
 
     def wait_uploading(self, count=1) -> None:
@@ -293,6 +310,14 @@ class PhotosPanel(Component):
         )
 
     def bulk_upload(self, images: List[str]) -> List[ImageCard]:
+        if self.driver.name.lower() == 'firefox':
+            uploading = 0
+            uploaded = []
+            for path in images:
+                uploaded.append(self.upload(os.path.abspath(path), uploading))
+                uploading = uploading + 1
+            return uploaded
+
         paths: str = '\n'.join([os.path.abspath(path) for path in images])
         self.upload_input.send_keys(paths)
         self.wait_uploading(len(images))

@@ -5,14 +5,19 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.select import Select
 
 from pages.page import Component, url_changer
-from pages.waits import web_element_locator
+from pages.waits import web_element_locator, button_locator
 
 
 class GroupCreateButton(Component):
     BUTTON: str = '//div[@class="create-group"]'
 
     def click(self):
-        self.driver.find_element_by_xpath(self.BUTTON).click()
+        self.group_create_button.click()
+
+    @property
+    @button_locator((By.XPATH, BUTTON))
+    def group_create_button(self) -> WebElement:
+        return self.driver.find_element_by_xpath(self.BUTTON)
 
 
 class GroupCreateDialog(Component):

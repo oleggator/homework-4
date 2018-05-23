@@ -83,7 +83,7 @@ class button_locator(web_element_locator):
 
 
 class dynamic_web_element_locator(object):
-    def __init__(self, locator_accessor: LocatorAccessor, timeout: int = 10):
+    def __init__(self, locator_accessor: LocatorAccessor, timeout: int = 25):
         self.locator_accessor: LocatorAccessor = locator_accessor
         self.timeout: int = timeout
 
@@ -99,4 +99,4 @@ class dynamic_web_element_locator(object):
 
     @property
     def expected_condition(self) -> callable:
-        return expected_conditions.presence_of_all_elements_located
+        return expected_conditions.presence_of_element_located

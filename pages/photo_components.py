@@ -1,10 +1,12 @@
 from enum import Enum
 
+from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
 
 from pages.page import Component, url_changer
-from pages.waits import web_element_locator
+from pages.waits import web_element_locator, button_locator
 
 
 class AlbumType(Enum):
@@ -90,9 +92,14 @@ class AlbumTypeChoiceModal(Component):
 
 
 class AlbumCreateButton(Component):
-    ALBUM_CREATE: str = '.ic_photos'
+    ALBUM_CREATE: str = '.portlet_h_ac.lp.__shift'
+
+    @property
+    @button_locator((By.CSS_SELECTOR, ALBUM_CREATE))
+    def album_create_button(self):
+        return self.driver.find_element_by_css_selector(self.ALBUM_CREATE)
 
     def create_album(self, album_type: AlbumType, description: dict):
-        self.driver.find_element_by_css_selector(self.ALBUM_CREATE).click()
+        self.album_create_button.send_keys(Keys.ENTER)
         AlbumTypeChoiceModal(self.driver).choose(album_type)
         AlbumCreateModalForm(self.driver, description).submit()
