@@ -1,6 +1,7 @@
 from typing import List
 
-from pages.album_components import AlbumControlPanel, ImageCard, PhotosPanel
+from pages.album_components import AlbumControlPanel, PhotosPanel
+from pages.images_components import ImageCard
 from pages.page import Page
 
 

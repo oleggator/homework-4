@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Tuple
+from typing import Tuple, Callable, Any
 from urllib import parse
 
 from selenium.webdriver.common.by import By
@@ -7,6 +7,7 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 
 Locator = Tuple[By, str]
+LocatorAccessor = Callable[[Any], Locator]
 
 
 class Page:

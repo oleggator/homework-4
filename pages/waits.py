@@ -1,7 +1,7 @@
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 
-from pages.page import Locator
+from pages.page import Locator, LocatorAccessor
 
 
 class element_not_found(object):
@@ -58,20 +58,45 @@ class web_element_locator(object):
     def __call__(self, method):
         def wrapped_f(other, *args, **kwargs):
             wait(other.driver, self.timeout).until(
-                expected_conditions.presence_of_all_elements_located(self.locator)
+                self.expected_condition(self.locator)
             )
             return method(other, *args, **kwargs)
 
         return wrapped_f
+
+    @property
+    def expected_condition(self) -> callable:
+        return expected_conditions.presence_of_all_elements_located
+
+
+class visible_web_elements_locator(web_element_locator):
+
+    @property
+    def expected_condition(self) -> callable:
+        return expected_conditions.visibility_of_all_elements_located
 
 
 class button_locator(web_element_locator):
+    @property
+    def expected_condition(self) -> callable:
+        return expected_conditions.element_to_be_clickable
+
+
+class dynamic_web_element_locator(object):
+    def __init__(self, locator_accessor: LocatorAccessor, timeout: int = 10):
+        self.locator_accessor: LocatorAccessor = locator_accessor
+        self.timeout: int = timeout
 
     def __call__(self, method):
         def wrapped_f(other, *args, **kwargs):
+            locator = self.locator_accessor(other)
             wait(other.driver, self.timeout).until(
-                expected_conditions.element_to_be_clickable(self.locator)
+                self.expected_condition(locator)
             )
             return method(other, *args, **kwargs)
 
         return wrapped_f
+
+    @property
+    def expected_condition(self) -> callable:
+        return expected_conditions.presence_of_all_elements_located

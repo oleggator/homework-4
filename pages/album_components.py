@@ -10,6 +10,7 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 
 from pages import waits
+from pages.images_components import ImageCard, ConfirmMakeMainModal
 from pages.page import Component
 from pages.waits import web_element_locator, button_locator
 
@@ -144,71 +145,6 @@ class Like(Component):
         return self.driver.find_element_by_css_selector(self.LABEL)
 
 
-class ExpandedImageCard(Component):
-    DESCRIPTION = 'span[data-link-source="photo-desc"]'
-
-    @property
-    @web_element_locator((By.CSS_SELECTOR, DESCRIPTION))
-    def description(self) -> str:
-        return self.driver.find_element_by_css_selector(self.DESCRIPTION).text
-
-
-class ImageCard(Component):
-    EDIT_TEMPLATE: str = '//div[@id="trigger_{}"]'
-    DELETE_BUTTON_TEMPLATE: str = '#popup_{} .ic_delete'
-    MAKE_MAIN_TEMPLATE: str = '#popup_{} .ic_make-main'
-    EDIT_DESCRIPTION_TEMPLATE: str = '//textarea[@id="descrInp{}"]'
-    IMAGE_TEMPLATE: str = '#img_{}'
-    RESTORE_BUTTON_TEMPLATE: str = '#hook_Block_DeleteRestorePhotoMRB{} a'
-
-    def __init__(self, driver, img_id: str):
-        super().__init__(driver)
-        self.id: str = img_id
-        self.IMAGE = self.IMAGE_TEMPLATE.format(self.id)
-        self.EDIT_DESCRIPTION: str = self.EDIT_DESCRIPTION_TEMPLATE.format(self.id)
-        self.EDIT: str = self.EDIT_TEMPLATE.format(self.id)
-        self.DELETE: str = self.DELETE_BUTTON_TEMPLATE.format(self.id)
-        self.MAKE_MAIN: str = self.MAKE_MAIN_TEMPLATE.format(self.id)
-        self.RESTORE: str = self.RESTORE_BUTTON_TEMPLATE.format(self.id)
-
-    @property
-    def description(self) -> str:
-        return self.driver.find_element_by_xpath(self.EDIT_DESCRIPTION).get_attribute('value')
-
-    @property
-    def edit(self) -> WebElement:
-        return self.driver.find_element_by_xpath(self.EDIT)
-
-    @property
-    def delete_button(self) -> WebElement:
-        return self.driver.find_element_by_css_selector(self.DELETE)
-
-    @description.setter
-    def description(self, value) -> None:
-        self.driver.find_element_by_xpath(self.EDIT_DESCRIPTION).send_keys(value)
-
-    @property
-    def image_src(self) -> WebElement:
-        return self.driver.find_element_by_css_selector(self.IMAGE)
-
-    def make_main(self):
-        self.driver.execute_script('''
-            document.querySelector(`{}`).click()
-        '''.format(self.MAKE_MAIN))
-
-    def delete_image_card(self) -> None:
-        self.driver.execute_script('''
-            document.querySelector(`{}`).click()
-        '''.format(self.DELETE))
-        waits.wait(self.driver).until(
-            expected_conditions.presence_of_element_located((By.CSS_SELECTOR, self.RESTORE))
-        )
-
-    def expand(self) -> ExpandedImageCard:
-        self.image_src.click()
-        return ExpandedImageCard(self.driver)
-
-
 class AlbumControlPanel(Component):
     DELETE: str = 'ul.controls-list > li:nth-child(2) > a'
     EDIT: str = '.ic12_edit'
@@ -292,8 +228,30 @@ class AlbumControlPanel(Component):
         img_id: str = id_from_src(self.main_img_raw.get_attribute('src'))
         return ImageCard(self.driver, img_id)
 
+    @main_photo.setter
+    def main_photo(self, new_main_photo: ImageCard):
+        new_main_photo.make_main().confirm()
+
+    def request_main_photo(self, new_main_photo: ImageCard) -> ConfirmMakeMainModal:
+        modal: ConfirmMakeMainModal = new_main_photo.make_main()
+
+        main_photo_change = self.create_main_photo_change_waiter(new_main_photo.id)
+
+        modal.on_confirm = lambda: waits.wait(self.driver).until(main_photo_change)
+        return modal
+
     def commit_changes(self) -> None:
         self.disable_edit()
+
+    def create_main_photo_change_waiter(self, new_id):
+        def waiter(driver):
+            main_photo: WebElement = driver.find_element_by_css_selector(self.MAIN_PHOTO)
+            found_id: str = id_from_src(main_photo.get_attribute('src'))
+            if found_id == new_id:
+                return main_photo
+            return False
+
+        return waiter
 
 
 class PhotosPanel(Component):
@@ -315,15 +273,19 @@ class PhotosPanel(Component):
     def upload_input(self) -> WebElement:
         return self.driver.find_element_by_xpath(self.UPLOAD)
 
-    def get_last(self):
+    def get_first(self):
         id_img: str = id_from_web_element(self.images[0])
+        return ImageCard(self.driver, id_img)
+
+    def get_last(self):
+        id_img: str = id_from_web_element(self.images[-1])
         return ImageCard(self.driver, id_img)
 
     def upload(self, path: str) -> ImageCard:
         path = os.path.abspath(path)
         self.upload_input.send_keys(path)
         self.wait_uploading()
-        return self.get_last()
+        return self.get_first()
 
     def wait_uploading(self, count=1) -> None:
         waits.wait(self.driver).until(
