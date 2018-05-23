@@ -118,8 +118,6 @@ class AlbumPageImagesManagementTest(unittest.TestCase):
 
         self.assertEqual(main_id, current_main_id)
 
-    @unittest.skipIf(os.getenv('BROWSER', 'CHROME') == 'FIREFOX',
-                     "seems that multiply images upload is impossible in geckodirver")
     def test_bulk_image_upload(self):
         images: List[ImageCard] = self.album.upload_photos(self.SAMPLE_BULK_IMAGES)
         uploaded: List[ImageCard] = self.album_photos_panel.images
