@@ -5,7 +5,7 @@ from typing import List
 from selenium import webdriver
 from selenium.webdriver import DesiredCapabilities
 
-from pages.album_components import ImageCard
+from pages.images_components import ImageCard
 from pages.album_page import AlbumPage
 from pages.auth_page import AuthPage
 from pages.group_page import GroupPage

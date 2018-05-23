@@ -5,10 +5,10 @@ from typing import List
 from selenium import webdriver
 from selenium.webdriver import DesiredCapabilities
 
-from pages.album_components import ImageCard, ExpandedImageCard
 from pages.album_page import AlbumPage
 from pages.auth_page import AuthPage
 from pages.group_page import GroupPage
+from pages.images_components import ExpandedImageCard, ImageCard, ConfirmMakeMainModal
 from pages.my_groups_components import GroupSubcategory, AgeRestriction
 from pages.photo_components import AlbumType
 from pages.photo_page import PhotoPage
@@ -53,6 +53,8 @@ class AlbumPageImagesManagementTest(unittest.TestCase):
     def setUp(self):
         self.album: AlbumPage = self.photo_page.open() \
             .create_album(AlbumType.ALBUM, self.ALBUM)
+        self.album_control_panel = self.album.control_panel
+        self.album_photos_panel = self.album.photos_panel
 
     def tearDown(self):
         self.album.open()
@@ -66,44 +68,59 @@ class AlbumPageImagesManagementTest(unittest.TestCase):
 
     def test_image_upload(self):
         image: ImageCard = self.album.upload_photo(self.SAMPLE_IMAGE_PATH)
-        uploaded: ImageCard = self.album.photos_panel.get_last()
+        uploaded: ImageCard = self.album_photos_panel.get_first()
         self.assertEqual(image.id, uploaded.id)
 
     def test_big_image_upload(self):
         image: ImageCard = self.album.upload_photo(self.SAMPLE_BIG_IMAGE_PATH)
-        uploaded: ImageCard = self.album.photos_panel.get_last()
+        uploaded: ImageCard = self.album_photos_panel.get_first()
         self.assertEqual(image.id, uploaded.id)
 
     def test_small_image_upload(self):
         image: ImageCard = self.album.upload_photo(self.SAMPLE_SMALL_IMAGE_PATH)
-        uploaded: ImageCard = self.album.photos_panel.get_last()
+        uploaded: ImageCard = self.album_photos_panel.get_first()
         self.assertEqual(image.id, uploaded.id)
 
     def test_image_delete(self):
         image: ImageCard = self.album.upload_photo(self.SAMPLE_IMAGE_PATH)
         image.delete_image_card()
-        self.album.control_panel.commit_changes()
+        self.album_control_panel.commit_changes()
         self.assertIsNone(self.album.image(image.id))
 
     def test_set_image_description(self):
         image: ImageCard = self.album.upload_photo(self.SAMPLE_IMAGE_PATH)
-        self.album.control_panel.enable_edit()
+        self.album_control_panel.enable_edit()
         image.description = self.SAMPLE_IMAGE_DESCRIPTION
-        self.album.control_panel.disable_edit()
+        self.album_control_panel.disable_edit()
         expanded: ExpandedImageCard = image.expand()
         self.assertEquals(self.SAMPLE_IMAGE_DESCRIPTION, expanded.description)
 
-    @unittest.skip("under development")
-    def test_image_make_main(self):
-        self.album.upload_photo(self.SAMPLE_IMAGE_PATH)
-        final: ImageCard = self.album.upload_photo(self.SAMPLE_IMAGE_PATH)
-        final.make_main()
-        main: ImageCard = self.album.control_panel.main_photo
-        self.assertEqual(final.id, main.id)
+    def test_make_main_image(self):
+        self.album.upload_photos([self.SAMPLE_IMAGE_PATH, self.SAMPLE_IMAGE_PATH])
+        self.album_control_panel.disable_edit()
+
+        new_main_image: ImageCard = self.album_photos_panel.get_last()
+        self.album_control_panel.main_photo = new_main_image
+        main: ImageCard = self.album_control_panel.main_photo
+        self.assertEqual(new_main_image.id, main.id)
+
+    def test_cancel_make_main_image(self):
+        self.album.upload_photos([self.SAMPLE_IMAGE_PATH, self.SAMPLE_IMAGE_PATH])
+        self.album_control_panel.disable_edit()
+
+        main_photo_candidate: ImageCard = self.album_photos_panel.get_last()
+        current_main_id: str = self.album_control_panel.main_photo.id
+
+        modal: ConfirmMakeMainModal = self.album_control_panel.request_main_photo(main_photo_candidate)
+        modal.cancel()
+
+        main_id: str = self.album_control_panel.main_photo.id
+
+        self.assertEqual(main_id, current_main_id)
 
     @unittest.skipIf(os.getenv('BROWSER', 'CHROME') == 'FIREFOX',
                      "seems that multiply images upload is impossible in geckodirver")
     def test_bulk_image_upload(self):
         images: List[ImageCard] = self.album.upload_photos(self.SAMPLE_BULK_IMAGES)
-        uploaded: List[ImageCard] = self.album.photos_panel.images
+        uploaded: List[ImageCard] = self.album_photos_panel.images
         self.assertEqual(len(images), len(uploaded))
