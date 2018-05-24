@@ -316,11 +316,16 @@ class PhotosPanel(Component):
     SELECT_ALL: str = '#checkboxSelAll'
     UPLOAD: str = '//input[@name="photo"]'
     IMAGE_LOCATOR: str = '#img_{}'
+    DRAG_AND_DROP_TRACKER: str = '.photo-card_dnd.visible'
 
     @property
     @web_element_locator((By.CSS_SELECTOR, PHOTOS))
     def images(self) -> List[WebElement]:
         return self.driver.find_elements_by_css_selector(self.PHOTOS)
+
+    @property
+    def image_cards(self) -> List[ImageCard]:
+        return [ImageCard(self.driver, id_from_web_element(img)) for img in self.images]
 
     @property
     @web_element_locator((By.XPATH, UPLOAD))
@@ -387,6 +392,12 @@ class PhotosPanel(Component):
     @button_locator((By.CSS_SELECTOR, SELECT_ALL))
     def select_all_checkbox(self) -> WebElement:
         return self.driver.find_element_by_css_selector(self.SELECT_ALL)
+
+    def drag_and_drop(self, lhs: ImageCard, rhs: ImageCard):
+        lhs.take_position(rhs)
+        waits.wait(self.driver).until_not(
+            expected_conditions.presence_of_element_located((By.CSS_SELECTOR, self.DRAG_AND_DROP_TRACKER))
+        )
 
 
 def id_from_web_element(img: WebElement) -> str:

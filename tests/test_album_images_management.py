@@ -34,7 +34,8 @@ class AlbumPageImagesManagementTest(unittest.TestCase):
     SAMPLE_SMALL_IMAGE_PATH: str = 'assets/sample_small_image.jpg'
     SAMPLE_IMAGES_PACK_BIG: List[str] = ['assets/sample_image.jpg' for x in range(0, 10)]
     SAMPLE_IMAGES_PACK_SMALL: List[str] = ['assets/sample_image.jpg' for x in range(0, 3)]
-    SAMPLE_IMAGES_PACK_MEDIUM: List[str] = ['assets/sample_image.jpg' for x in range(0, 5)]
+    SAMPLE_IMAGES_PACK_MEDIUM: List[str] = ['assets/sample_image.jpg', 'assets/sample_small_image.jpg',
+                                            'assets/sample_big_image.jpg']
 
     @classmethod
     def setUpClass(cls):
@@ -139,7 +140,7 @@ class AlbumPageImagesManagementTest(unittest.TestCase):
         images[0].delete_image_card()
         images[0].restore()
         self.album_control_panel.disable_edit()
-        self.assertEquals(1, len(self.album_photos_panel.images))
+        self.assertEqual(1, len(self.album_photos_panel.images))
 
     @unittest.expectedFailure
     def test_restore_all_images(self):
@@ -148,4 +149,20 @@ class AlbumPageImagesManagementTest(unittest.TestCase):
             image.delete_image_card()
             image.restore()
         self.album_control_panel.disable_edit()
-        self.assertEquals(1, len(self.album_photos_panel.images))
+        self.assertEqual(1, len(self.album_photos_panel.images))
+
+    def test_images_reordering(self):
+        self.album.upload_photos(self.SAMPLE_IMAGES_PACK_MEDIUM)
+        images: List[ImageCard] = self.album_photos_panel.image_cards
+        pushed_to_first_place_id = images[1].id
+        self.album_photos_panel.drag_and_drop(images[0], images[-1])
+        updated_images: List[ImageCard] = self.album_photos_panel.image_cards
+        self.assertEqual(pushed_to_first_place_id, updated_images[0].id)
+
+    def test_drag_and_drop_on_same_image(self):
+        self.album.upload_photos(self.SAMPLE_IMAGES_PACK_MEDIUM)
+        images: List[ImageCard] = self.album_photos_panel.image_cards
+        first_id: str = images[0].id
+        self.album_photos_panel.drag_and_drop(images[0], images[0])
+        updated_images: List[ImageCard] = self.album_photos_panel.image_cards
+        self.assertEqual(first_id, updated_images[0].id)

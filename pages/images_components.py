@@ -1,5 +1,6 @@
 from typing import Callable
 
+from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions
@@ -56,6 +57,7 @@ class ImageCard(Component):
     IMAGE_TEMPLATE: str = '#img_{}'
     RESTORE_BUTTON_TEMPLATE: str = '#hook_Block_DeleteRestorePhotoMRB{} .photo-sc_i_utility_undo-delete'
     CHECK_BUTTON_TEMPLATE: str = '#hook_Block_PhotoCardV2Block{} .selectable-card_ic'
+    CARD_TEMPLATE: str = 'span.photo-card_cnt #img_{}'
 
     def __init__(self, driver, img_id: str):
         super().__init__(driver)
@@ -67,6 +69,7 @@ class ImageCard(Component):
         self.MAKE_MAIN: str = self.MAKE_MAIN_TEMPLATE.format(self.id)
         self.RESTORE: str = self.RESTORE_BUTTON_TEMPLATE.format(self.id)
         self.CHECK_BUTTON: str = self.CHECK_BUTTON_TEMPLATE.format(self.id)
+        self.CARD_TEMPLATE: str = self.CARD_TEMPLATE.format(self.id)
 
     @property
     def description(self) -> str:
@@ -125,3 +128,12 @@ class ImageCard(Component):
     def expand(self) -> ExpandedImageCard:
         self.image_src.click()
         return ExpandedImageCard(self.driver)
+
+    def take_position(self, other) -> None:
+        ActionChains(self.driver) \
+            .move_to_element(self.image_src) \
+            .click_and_hold() \
+            .pause(1) \
+            .move_to_element(other.image_src) \
+            .release() \
+            .perform()
