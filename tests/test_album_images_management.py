@@ -122,3 +122,5 @@ class AlbumPageImagesManagementTest(unittest.TestCase):
         images: List[ImageCard] = self.album.upload_photos(self.SAMPLE_BULK_IMAGES)
         uploaded: List[ImageCard] = self.album_photos_panel.images
         self.assertEqual(len(images), len(uploaded))
+
+
