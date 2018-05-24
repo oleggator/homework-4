@@ -32,7 +32,9 @@ class AlbumPageImagesManagementTest(unittest.TestCase):
     SAMPLE_IMAGE_PATH: str = 'assets/sample_image.jpg'
     SAMPLE_BIG_IMAGE_PATH: str = 'assets/sample_big_image.jpg'
     SAMPLE_SMALL_IMAGE_PATH: str = 'assets/sample_small_image.jpg'
-    SAMPLE_BULK_IMAGES: List[str] = ['assets/sample_image.jpg' for x in range(0, 10)]
+    SAMPLE_IMAGES_PACK_BIG: List[str] = ['assets/sample_image.jpg' for x in range(0, 10)]
+    SAMPLE_IMAGES_PACK_SMALL: List[str] = ['assets/sample_image.jpg' for x in range(0, 3)]
+    SAMPLE_IMAGES_PACK_MEDIUM: List[str] = ['assets/sample_image.jpg' for x in range(0, 5)]
 
     @classmethod
     def setUpClass(cls):
@@ -119,8 +121,31 @@ class AlbumPageImagesManagementTest(unittest.TestCase):
         self.assertEqual(main_id, current_main_id)
 
     def test_bulk_image_upload(self):
-        images: List[ImageCard] = self.album.upload_photos(self.SAMPLE_BULK_IMAGES)
+        images: List[ImageCard] = self.album.upload_photos(self.SAMPLE_IMAGES_PACK_BIG)
         uploaded: List[ImageCard] = self.album_photos_panel.images
         self.assertEqual(len(images), len(uploaded))
 
+    @unittest.expectedFailure
+    def test_restore_single_image(self):
+        image: ImageCard = self.album_photos_panel.upload(self.SAMPLE_IMAGE_PATH)
+        image_id = image.id
+        image.delete_image_card()
+        image.restore()
+        self.album_control_panel.disable_edit()
+        self.assertIsNotNone(self.album_photos_panel.find_image(image_id))
 
+    def test_restore_one_image(self):
+        images: List[ImageCard] = self.album.upload_photos(self.SAMPLE_IMAGES_PACK_BIG)
+        images[0].delete_image_card()
+        images[0].restore()
+        self.album_control_panel.disable_edit()
+        self.assertEquals(1, len(self.album_photos_panel.images))
+
+    @unittest.expectedFailure
+    def test_restore_all_images(self):
+        images: List[ImageCard] = self.album.upload_photos(self.SAMPLE_IMAGES_PACK_SMALL)
+        for image in images:
+            image.delete_image_card()
+            image.restore()
+        self.album_control_panel.disable_edit()
+        self.assertEquals(1, len(self.album_photos_panel.images))

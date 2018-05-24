@@ -81,7 +81,6 @@ class button_locator(web_element_locator):
     def expected_condition(self) -> callable:
         return expected_conditions.element_to_be_clickable
 
-
 class dynamic_web_element_locator(object):
     def __init__(self, locator_accessor: LocatorAccessor, timeout: int = 25):
         self.locator_accessor: LocatorAccessor = locator_accessor

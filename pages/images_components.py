@@ -54,7 +54,7 @@ class ImageCard(Component):
     MAKE_MAIN_TEMPLATE: str = '#popup_{} .ic_make-main'
     EDIT_DESCRIPTION_TEMPLATE: str = '//textarea[@id="descrInp{}"]'
     IMAGE_TEMPLATE: str = '#img_{}'
-    RESTORE_BUTTON_TEMPLATE: str = '#hook_Block_DeleteRestorePhotoMRB{} a'
+    RESTORE_BUTTON_TEMPLATE: str = '#hook_Block_DeleteRestorePhotoMRB{} .photo-sc_i_utility_undo-delete'
     CHECK_BUTTON_TEMPLATE: str = '#hook_Block_PhotoCardV2Block{} .selectable-card_ic'
 
     def __init__(self, driver, img_id: str):
@@ -91,6 +91,17 @@ class ImageCard(Component):
     @property
     def check_button(self) -> WebElement:
         return self.driver.find_element_by_css_selector(self.CHECK_BUTTON)
+
+    @property
+    @dynamic_web_element_locator(lambda self: (By.CSS_SELECTOR, self.RESTORE))
+    def restore_button(self) -> WebElement:
+        return self.driver.find_element_by_css_selector(self.RESTORE)
+
+    def restore(self) -> None:
+        restore_button = self.restore_button
+        if restore_button is None:
+            return
+        restore_button.click()
 
     def check(self):
         self.check_button.click()

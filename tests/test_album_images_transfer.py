@@ -90,3 +90,4 @@ class ImagesTransferTest(unittest.TestCase):
         main_album.photos_panel.transfer_all_images(self.SAMPLE_OTHER_ALBUM['title'])
         other_album.open()
         self.assertEqual(len(self.SAMPLE_IMAGES_PACK), len(other_album.photos_panel.images))
+
