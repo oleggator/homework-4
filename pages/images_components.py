@@ -55,6 +55,7 @@ class ImageCard(Component):
     EDIT_DESCRIPTION_TEMPLATE: str = '//textarea[@id="descrInp{}"]'
     IMAGE_TEMPLATE: str = '#img_{}'
     RESTORE_BUTTON_TEMPLATE: str = '#hook_Block_DeleteRestorePhotoMRB{} a'
+    CHECK_BUTTON_TEMPLATE: str = '#hook_Block_PhotoCardV2Block{} .selectable-card_ic'
 
     def __init__(self, driver, img_id: str):
         super().__init__(driver)
@@ -65,6 +66,7 @@ class ImageCard(Component):
         self.DELETE: str = self.DELETE_BUTTON_TEMPLATE.format(self.id)
         self.MAKE_MAIN: str = self.MAKE_MAIN_TEMPLATE.format(self.id)
         self.RESTORE: str = self.RESTORE_BUTTON_TEMPLATE.format(self.id)
+        self.CHECK_BUTTON: str = self.CHECK_BUTTON_TEMPLATE.format(self.id)
 
     @property
     def description(self) -> str:
@@ -85,6 +87,13 @@ class ImageCard(Component):
     @property
     def image_src(self) -> WebElement:
         return self.driver.find_element_by_css_selector(self.IMAGE)
+
+    @property
+    def check_button(self) -> WebElement:
+        return self.driver.find_element_by_css_selector(self.CHECK_BUTTON)
+
+    def check(self):
+        self.check_button.click()
 
     @dynamic_web_element_locator(lambda self: (By.CSS_SELECTOR, self.MAKE_MAIN))
     def make_main(self):

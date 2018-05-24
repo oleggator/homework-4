@@ -13,6 +13,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from pages import waits
 from pages.images_components import ImageCard, ConfirmMakeMainModal
 from pages.page import Component
+from pages.photo_components import AlbumCreateModalForm
 from pages.waits import web_element_locator, button_locator
 
 
@@ -263,12 +264,56 @@ class AlbumControlPanel(Component):
         return waiter
 
 
+class TransferAlbumDropdown(Component):
+    TRANSFER_TARGET_TEMPLATE: str = '//div[@class="custom-isl_drop-lst"]/descendant::a[text()="{}"]'
+    DROPDOWN: str = '.dropDownListContentWrapper'
+    CREATE_TRANSFER_TARGET: str = '.custom-isl_drop-lst a.custom-isl_i_l.al.ellip'
+    START_TRANSFER: str = '.js-button_move'
+    ACKNOWLEDGEMENT: str = '.iblock.__ok'
+
+    def choose(self, album_name: str):
+        self.dropdown.click()
+        transfer_target = self.get_transfer_target(album_name)
+        transfer_target.click()
+        self.start_transfer()
+        waits.wait(self.driver).until(
+            expected_conditions.presence_of_element_located((By.CSS_SELECTOR, self.ACKNOWLEDGEMENT))
+        )
+
+    @property
+    @web_element_locator((By.CSS_SELECTOR, CREATE_TRANSFER_TARGET))
+    def create_new_album_button(self) -> WebElement:
+        return self.driver.find_element_by_css_selector(self.CREATE_TRANSFER_TARGET)
+
+    @property
+    @web_element_locator((By.CSS_SELECTOR, DROPDOWN))
+    def dropdown(self) -> WebElement:
+        return self.driver.find_element_by_css_selector(self.DROPDOWN)
+
+    def get_transfer_target(self, album_name) -> WebElement:
+        transfer_target = self.TRANSFER_TARGET_TEMPLATE.format(album_name)
+        waits.wait(self.driver).until(expected_conditions.presence_of_element_located((By.XPATH, transfer_target)))
+        return self.driver.find_element_by_xpath(transfer_target)
+
+    def choose_new(self, album_description: dict):
+        self.create_new_album_button.click()
+        AlbumCreateModalForm(self.driver, album_description).submit()
+
+    def start_transfer(self):
+        self.start_transfer_button.click()
+
+    @property
+    @button_locator((By.CSS_SELECTOR, START_TRANSFER))
+    def start_transfer_button(self) -> WebElement:
+        return self.driver.find_element_by_css_selector(self.START_TRANSFER)
+
+
 class PhotosPanel(Component):
     LOADER: str = "//div[@class='photo-card_loading']"
 
     PHOTOS: str = '.photo-card_cnt img'
     UPLOADED_PHOTOS: str = '//li[@class="ugrid_i"]/div[starts-with(@id, "hook_Block_UploadedGroupPhotoCardBlock")]'
-
+    SELECT_ALL: str = '#checkboxSelAll'
     UPLOAD: str = '//input[@name="photo"]'
     IMAGE_LOCATOR: str = '#img_{}'
 
@@ -297,6 +342,11 @@ class PhotosPanel(Component):
         else:
             id_img = id_from_web_element(self.images[-1])
         return ImageCard(self.driver, id_img)
+
+    def transfer_images(self, images: List[ImageCard], dest: str):
+        for image in images:
+            image.check()
+        TransferAlbumDropdown(self.driver).choose(dest)
 
     def upload(self, path: str, current=0) -> ImageCard:
         path = os.path.abspath(path)
@@ -328,6 +378,15 @@ class PhotosPanel(Component):
         if len(image_wrapper) == 0:
             return None
         return image_wrapper[0]
+
+    def transfer_all_images(self, dest):
+        self.select_all_checkbox.click()
+        TransferAlbumDropdown(self.driver).choose(dest)
+
+    @property
+    @button_locator((By.CSS_SELECTOR, SELECT_ALL))
+    def select_all_checkbox(self) -> WebElement:
+        return self.driver.find_element_by_css_selector(self.SELECT_ALL)
 
 
 def id_from_web_element(img: WebElement) -> str:
