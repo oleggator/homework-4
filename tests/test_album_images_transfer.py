@@ -54,18 +54,18 @@ class ImagesTransferTest(unittest.TestCase):
 
         cls.albums = []
 
-        def add_album(self, album_description: dict) -> AlbumPage:
-            album: AlbumPage = cls.photo_page.open() \
-                .create_album(AlbumType.ALBUM, album_description)
-            cls.albums.append(album)
-            return album
-
-        cls.add_album = add_album
-
     def tearDown(self):
         for album in self.albums:
             album.open()
             album.delete_album()
+
+        self.albums.clear()
+
+    def add_album(self, album_description: dict) -> AlbumPage:
+        album: AlbumPage = self.photo_page.open() \
+            .create_album(AlbumType.ALBUM, album_description)
+        self.albums.append(album)
+        return album
 
     @classmethod
     def tearDownClass(cls):
@@ -90,4 +90,3 @@ class ImagesTransferTest(unittest.TestCase):
         main_album.photos_panel.transfer_all_images(self.SAMPLE_OTHER_ALBUM['title'])
         other_album.open()
         self.assertEqual(len(self.SAMPLE_IMAGES_PACK), len(other_album.photos_panel.images))
-
