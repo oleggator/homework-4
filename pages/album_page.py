@@ -1,6 +1,7 @@
 from typing import List
 
-from pages.album_components import AlbumControlPanel, ImageCard, PhotosPanel
+from pages.album_components import AlbumControlPanel, PhotosPanel
+from pages.images_components import ImageCard
 from pages.page import Page
 
 
@@ -30,3 +31,6 @@ class AlbumPage(Page):
 
     def upload_photos(self, images: List[str]) -> List[ImageCard]:
         return self.photos_panel.bulk_upload(images)
+
+    def image(self, image_id) -> ImageCard:
+        return self.photos_panel.find_image(image_id)

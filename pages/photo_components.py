@@ -1,10 +1,13 @@
 import os
 from enum import Enum
 
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.keys import Keys
 
 from pages.page import Component, url_changer
+from pages.waits import web_element_locator, button_locator
 
 
 class AlbumType(Enum):
@@ -26,6 +29,7 @@ class AlbumCreateModalForm(Component):
         self.sticky_album: bool = description['sticky_album']
 
     @property
+    @web_element_locator((By.XPATH, TITLE))
     def title(self):
         return self.driver.find_element_by_xpath(self.TITLE)
 
@@ -34,6 +38,7 @@ class AlbumCreateModalForm(Component):
         self.title.send_keys(val)
 
     @property
+    @web_element_locator((By.XPATH, ADMINS_ONLY))
     def admins_only(self) -> WebElement:
         return self.driver.find_element_by_xpath(self.ADMINS_ONLY)
 
@@ -46,6 +51,7 @@ class AlbumCreateModalForm(Component):
             elem.click()
 
     @property
+    @web_element_locator((By.XPATH, STICKY_ALBUM))
     def sticky_album(self) -> WebElement:
         return self.driver.find_element_by_xpath(self.STICKY_ALBUM)
 
@@ -156,10 +162,12 @@ class AlbumTypeChoiceModal(Component):
     CONTEST: str = '//i[@class="add-stub_img add-stub_img__contest"]/parent::a/parent::div[@class="ugrid_i"]/child::a'
 
     @property
+    @web_element_locator((By.XPATH, ALBUM))
     def album(self) -> WebElement:
         return self.driver.find_element_by_xpath(self.ALBUM)
 
     @property
+    @web_element_locator((By.XPATH, CONTEST))
     def contest(self) -> WebElement:
         return self.driver.find_element_by_xpath(self.CONTEST)
 
@@ -171,10 +179,15 @@ class AlbumTypeChoiceModal(Component):
 
 
 class AlbumCreateButton(Component):
-    ALBUM_CREATE: str = '.ic_photos'
+    ALBUM_CREATE: str = '.portlet_h_ac.lp.__shift'
+
+    @property
+    @button_locator((By.CSS_SELECTOR, ALBUM_CREATE))
+    def album_create_button(self):
+        return self.driver.find_element_by_css_selector(self.ALBUM_CREATE)
 
     def create_album(self, album_type: AlbumType, description: dict):
-        self.driver.find_element_by_css_selector(self.ALBUM_CREATE).click()
+        self.album_create_button.send_keys(Keys.ENTER)
         AlbumTypeChoiceModal(self.driver).choose(album_type)
 
         if album_type == AlbumType.ALBUM:

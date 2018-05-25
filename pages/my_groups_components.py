@@ -1,16 +1,23 @@
 from enum import Enum
 
+from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.select import Select
 
 from pages.page import Component, url_changer
+from pages.waits import web_element_locator, button_locator
 
 
 class GroupCreateButton(Component):
     BUTTON: str = '//div[@class="create-group"]'
 
     def click(self):
-        self.driver.find_element_by_xpath(self.BUTTON).click()
+        self.group_create_button.click()
+
+    @property
+    @button_locator((By.XPATH, BUTTON))
+    def group_create_button(self) -> WebElement:
+        return self.driver.find_element_by_xpath(self.BUTTON)
 
 
 class GroupCreateDialog(Component):
@@ -18,10 +25,12 @@ class GroupCreateDialog(Component):
     INTEREST: str = '//a[@data-l="t,INTEREST"]'
 
     @property
+    @web_element_locator((By.XPATH, PAGE))
     def page(self) -> WebElement:
         return self.driver.find_element_by_xpath(self.PAGE)
 
     @property
+    @web_element_locator((By.XPATH, INTEREST))
     def interest(self) -> WebElement:
         return self.driver.find_element_by_xpath(self.INTEREST)
 
@@ -65,6 +74,7 @@ class GroupPageCreateForm(Component):
         self.age_restriction: str = page_description['age_restriction'].value
 
     @property
+    @web_element_locator((By.XPATH, TITLE))
     def title(self) -> WebElement:
         return self.driver.find_element_by_xpath(self.TITLE)
 
@@ -73,6 +83,7 @@ class GroupPageCreateForm(Component):
         self.title.send_keys(value)
 
     @property
+    @web_element_locator((By.XPATH, DESCRIPTION))
     def description(self) -> WebElement:
         return self.driver.find_element_by_xpath(self.DESCRIPTION)
 
@@ -81,6 +92,7 @@ class GroupPageCreateForm(Component):
         self.description.send_keys(value)
 
     @property
+    @web_element_locator((By.XPATH, SUBCATEGORY))
     def subcategory(self) -> Select:
         return Select(self.driver.find_element_by_xpath(self.SUBCATEGORY))
 
@@ -89,6 +101,7 @@ class GroupPageCreateForm(Component):
         self.subcategory.select_by_value(value)
 
     @property
+    @web_element_locator((By.XPATH, AGE_RESTRICTION))
     def age_restriction(self) -> Select:
         return Select(self.driver.find_element_by_xpath(self.AGE_RESTRICTION))
 
